@@ -40,6 +40,7 @@ export default function TaskList({
 
   const [sortBy, setSortBy] = useState<'dueDateAsc' | 'dueDateDesc' | 'priorityDesc' | 'createdAtDesc'>('dueDateAsc');
   const [selectedTaskForDetail, setSelectedTaskForDetail] = useState<Task | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
   // Focus View Pomodoro Timer State
   const [timerSeconds, setTimerSeconds] = useState(1500); // 25 mins
@@ -60,6 +61,18 @@ export default function TaskList({
     window.addEventListener('smarttask_settings_updated', handleUpdate);
     return () => window.removeEventListener('smarttask_settings_updated', handleUpdate);
   }, []);
+
+  // Synchronize dynamic updates on selectedTaskForDetail when tasks change from props
+  useEffect(() => {
+    if (selectedTaskForDetail) {
+      const updatedTask = tasks.find(t => t.id === selectedTaskForDetail.id);
+      if (updatedTask) {
+        setSelectedTaskForDetail(updatedTask);
+      } else {
+        setSelectedTaskForDetail(null);
+      }
+    }
+  }, [tasks, selectedTaskForDetail?.id]);
 
   // Web synthesizer alarm for focus spot Pomodoro completion
   const playHarpChime = () => {
@@ -427,9 +440,7 @@ export default function TaskList({
           <button
             type="button"
             onClick={() => {
-              if (window.confirm('Are you absolutely sure you want to delete this task? This action is irreversible.')) {
-                onDeleteTask(task.id);
-              }
+              setTaskToDelete(task);
             }}
             className="p-1.5 text-[#C2410C] hover:text-white border border-[#C2410C] hover:bg-[#C2410C] transition-all cursor-pointer"
             title="Terminate task document"
@@ -1264,11 +1275,7 @@ export default function TaskList({
                       <button
                         type="button"
                         onClick={() => {
-                          if (window.confirm('Terminate task record completely?')) {
-                            const id = selectedTaskForDetail.id;
-                            setSelectedTaskForDetail(null);
-                            onDeleteTask(id);
-                          }
+                          setTaskToDelete(selectedTaskForDetail);
                         }}
                         className="flex-1 py-3 text-center bg-rose-600 border border-rose-600 hover:bg-rose-700 hover:border-rose-700 text-white text-xs font-bold uppercase tracking-wider rounded-none cursor-pointer"
                       >
@@ -1279,6 +1286,80 @@ export default function TaskList({
                 </motion.div>
               </div>
             </div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {taskToDelete && (
+          <div 
+            id="delete-confirmation-overlay"
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          >
+            <motion.div
+              id="delete-confirmation-modal"
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="w-full max-w-md bg-white border-4 border-[#1A1A1A] p-6 shadow-2xl rounded-none relative text-[#1A1A1A]"
+            >
+              <div className="flex items-start gap-4 mb-4">
+                <div className="p-3 bg-[#C2410C]/5 border-2 border-[#C2410C] text-[#C2410C] shrink-0 rounded-none">
+                  <AlertCircle className="h-6 w-6 animate-pulse" />
+                </div>
+                <div>
+                  <h3 
+                    id="delete-confirmation-title"
+                    className="font-serif italic text-xl font-bold uppercase tracking-tight text-[#1A1A1A]"
+                  >
+                    Confirm Deletion
+                  </h3>
+                  <p className="text-xs text-slate-500 font-mono mt-1">
+                    ID: {taskToDelete.id}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mb-6 font-sans text-sm text-[#1A1A1A] leading-relaxed">
+                <p>
+                  Are you absolutely certain you want to terminally delete this task:
+                </p>
+                <div className="my-3 px-3 py-2 border border-slate-300 bg-slate-50 font-serif italic font-semibold text-base text-[#1a1a1a]">
+                  "{taskToDelete.title}"
+                </div>
+                <p className="text-xs text-[#C2410C] font-semibold flex items-center gap-1.5 mt-2">
+                  <span>⚠️</span> Warning: This dynamic document record will be permanently purged from the cloud environment.
+                </p>
+              </div>
+
+              <div className="flex gap-3 justify-end font-sans">
+                <button
+                  type="button"
+                  id="delete-cancel-btn"
+                  onClick={() => setTaskToDelete(null)}
+                  className="px-4 py-2 bg-transparent hover:bg-slate-50 border border-[#1A1A1A] text-[#1A1A1A] text-xs font-bold uppercase tracking-wider rounded-none cursor-pointer transition-colors"
+                >
+                  Dismiss / Cancel
+                </button>
+                <button
+                  type="button"
+                  id="delete-confirm-btn"
+                  onClick={async () => {
+                    const id = taskToDelete.id;
+                    setTaskToDelete(null);
+                    if (selectedTaskForDetail && selectedTaskForDetail.id === id) {
+                      setSelectedTaskForDetail(null);
+                    }
+                    await onDeleteTask(id);
+                  }}
+                  className="px-4 py-2 bg-[#C2410C] hover:bg-[#A1330A] border-2 border-[#1A1A1A]/0 text-white text-xs font-bold uppercase tracking-wider rounded-none cursor-pointer transition-colors"
+                >
+                  Confirm Delete
+                </button>
+              </div>
+            </motion.div>
           </div>
         )}
       </AnimatePresence>

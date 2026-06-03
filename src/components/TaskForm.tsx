@@ -37,6 +37,7 @@ interface TaskFormProps {
 }
 
 export default function TaskForm({ taskToEdit, existingProjects = [], onSave, onClose }: TaskFormProps) {
+  const [formMode, setFormMode] = useState<'quick' | 'advanced'>(taskToEdit ? 'advanced' : 'quick');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [project, setProject] = useState('');
@@ -97,6 +98,7 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
 
   useEffect(() => {
     if (taskToEdit) {
+      setFormMode('advanced');
       setTitle(taskToEdit.title);
       setDescription(taskToEdit.description || '');
       setPriority(taskToEdit.priority);
@@ -136,6 +138,7 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
       setDependency(taskToEdit.dependency || '');
       setEstimatedEffort(taskToEdit.estimatedEffort || 'Medium');
     } else {
+      setFormMode('quick');
       setTitle('');
       setDescription('');
       setProject('');
@@ -286,6 +289,32 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
               </div>
             )}
 
+            {/* Dual Mode Switcher Panel */}
+            <div className="grid grid-cols-2 gap-1 bg-[#EBEAE6] p-1 border border-[#1A1A1A]/20 rounded-none mb-2 select-none font-sans">
+              <button
+                type="button"
+                onClick={() => setFormMode('quick')}
+                className={`py-2 text-[10px] font-bold uppercase tracking-wider text-center transition-all duration-150 cursor-pointer ${
+                  formMode === 'quick' 
+                    ? 'bg-[#1A1A1A] text-white' 
+                    : 'bg-transparent text-[#1A1A1A] hover:bg-[#1A1A1A]/5'
+                }`}
+              >
+                ⚡ Quick Mode
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormMode('advanced')}
+                className={`py-2 text-[10px] font-bold uppercase tracking-wider text-center transition-all duration-150 cursor-pointer ${
+                  formMode === 'advanced' 
+                    ? 'bg-[#1A1A1A] text-white' 
+                    : 'bg-transparent text-[#1A1A1A] hover:bg-[#1A1A1A]/5'
+                }`}
+              >
+                ⚙️ Advanced Mode
+              </button>
+            </div>
+
             {/* Title */}
             <div>
               <label className="block text-[10px] font-bold text-[#1A1A1A] uppercase tracking-[0.15em] mb-1.5">Task Title *</label>
@@ -302,45 +331,49 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
               <div className="text-[10px] text-right text-slate-500 mt-1 font-mono">{title.length}/100</div>
             </div>
 
-            {/* Description */}
-            <div>
-              <label className="block text-[10px] font-bold text-[#1A1A1A] uppercase tracking-[0.15em] mb-1.5 font-sans">Description (Optional)</label>
-              <textarea
-                placeholder="Include agenda details, milestones, reference links..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                maxLength={1000}
-                className="w-full px-4 py-3 bg-white border border-[#1A1A1A] rounded-none outline-none focus:ring-1 focus:ring-[#C2410C] text-[#1A1A1A] text-sm font-serif resize-none"
-              />
-            </div>
+            {formMode === 'advanced' && (
+              <>
+                {/* Description */}
+                <div>
+                  <label className="block text-[10px] font-bold text-[#1A1A1A] uppercase tracking-[0.15em] mb-1.5 font-sans">Description (Optional)</label>
+                  <textarea
+                    placeholder="Include agenda details, milestones, reference links..."
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={3}
+                    maxLength={1000}
+                    className="w-full px-4 py-3 bg-white border border-[#1A1A1A] rounded-none outline-none focus:ring-1 focus:ring-[#C2410C] text-[#1A1A1A] text-sm font-serif resize-none"
+                  />
+                </div>
 
-            {/* Project */}
-            <div>
-              <label className="block text-[10px] font-bold text-[#1A1A1A] uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1.5 font-sans">
-                <Folder className="h-3.5 w-3.5 text-[#C2410C]" /> Project / Section (Optional)
-              </label>
-              <input
-                id="task-project-input"
-                type="text"
-                list="existing-projects"
-                placeholder="e.g. Summer Release, Home Renovation"
-                value={project}
-                onChange={(e) => setProject(e.target.value)}
-                maxLength={100}
-                className="w-full px-4 py-3 bg-white border border-[#1A1A1A] rounded-none outline-none focus:ring-1 focus:ring-[#C2410C] text-[#1A1A1A] text-sm font-serif"
-              />
-              {existingProjects && existingProjects.length > 0 && (
-                <datalist id="existing-projects">
-                  {existingProjects.map((p) => (
-                    <option key={p} value={p} />
-                  ))}
-                </datalist>
-              )}
-              <span className="text-[9px] text-slate-500 font-serif italic mt-1 block leading-normal">
-                Assign to an existing workspace book or create a new section inline by typing.
-              </span>
-            </div>
+                {/* Project */}
+                <div>
+                  <label className="block text-[10px] font-bold text-[#1A1A1A] uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1.5 font-sans">
+                    <Folder className="h-3.5 w-3.5 text-[#C2410C]" /> Project / Section (Optional)
+                  </label>
+                  <input
+                    id="task-project-input"
+                    type="text"
+                    list="existing-projects"
+                    placeholder="e.g. Summer Release, Home Renovation"
+                    value={project}
+                    onChange={(e) => setProject(e.target.value)}
+                    maxLength={100}
+                    className="w-full px-4 py-3 bg-white border border-[#1A1A1A] rounded-none outline-none focus:ring-1 focus:ring-[#C2410C] text-[#1A1A1A] text-sm font-serif"
+                  />
+                  {existingProjects && existingProjects.length > 0 && (
+                    <datalist id="existing-projects">
+                      {existingProjects.map((p) => (
+                        <option key={p} value={p} />
+                      ))}
+                    </datalist>
+                  )}
+                  <span className="text-[9px] text-slate-500 font-serif italic mt-1 block leading-normal">
+                    Assign to an existing workspace book or create a new section inline by typing.
+                  </span>
+                </div>
+              </>
+            )}
 
             {/* Category and Priority (Two column grid) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -390,8 +423,10 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
               </div>
             </div>
 
-            {/* Category-Specific Form Enhancements */}
-            <div className="p-4 border border-[#1A1A1A] bg-[#F1EFEA]">
+            {formMode === 'advanced' && (
+              <>
+                {/* Category-Specific Form Enhancements */}
+                <div className="p-4 border border-[#1A1A1A] bg-[#F1EFEA]">
               <div className="flex items-center gap-2 mb-2 pb-1 border-b border-[#1A1A1A]/10">
                 <Sparkles className="h-3.5 w-3.5 text-[#C2410C]" />
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1A1A] font-mono">
@@ -663,6 +698,8 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
                 </button>
               </div>
             </div>
+              </>
+            )}
 
             {/* Due Date */}
             <div>
@@ -678,8 +715,10 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
               />
             </div>
 
-            {/* Optional Reminder Setup */}
-            <div className="bg-white p-4 rounded-none border border-[#1A1A1A] space-y-3">
+            {formMode === 'advanced' && (
+              <>
+                {/* Optional Reminder Setup */}
+                <div className="bg-white p-4 rounded-none border border-[#1A1A1A] space-y-3">
               <div className="flex items-center justify-between">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -779,6 +818,8 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
                 )}
               </div>
             </div>
+              </>
+            )}
 
             {/* Submission Buttons */}
             <div className="flex gap-3 justify-end pt-3 border-t border-[#1A1A1A]">

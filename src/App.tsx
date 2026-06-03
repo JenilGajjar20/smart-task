@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   auth, db, logoutUser, handleFirestoreError 
@@ -87,6 +87,10 @@ export default function App() {
       .filter((p): p is string => typeof p === 'string' && p.trim() !== '');
     return Array.from(new Set(list)).sort();
   }, [tasks]);
+
+  // Lock toggles to prevent duplicate execution & race conditions
+  const [activeToggles, setActiveToggles] = useState<Record<string, boolean>>({});
+  const togglingTaskIds = useRef<Set<string>>(new Set());
 
   // Modal form states
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -492,6 +496,14 @@ export default function App() {
       triggerToast('Authentication Required. Please connect your account to complete tasks.', 'error');
       return;
     }
+    if (activeToggles[task.id] || togglingTaskIds.current.has(task.id)) {
+      // Toggle is already in progress for this task!
+      return;
+    }
+
+    // Set locks synchronously and via state
+    togglingTaskIds.current.add(task.id);
+    setActiveToggles(prev => ({ ...prev, [task.id]: true }));
     const path = 'tasks';
     const nextCompletedState = !task.completed;
     
@@ -524,67 +536,17 @@ export default function App() {
 
       await updateDoc(docRef, payload);
 
-      // Auto-create next recurring instance if marking as completed
-      if (nextCompletedState && task.recurrence && task.recurrence.frequency !== 'none') {
-        const currentDue = task.dueDate.toDate();
-        const nextDue = new Date(currentDue);
-        const freq = task.recurrence.frequency;
-
-        if (freq === 'daily') {
-          nextDue.setDate(nextDue.getDate() + 1);
-        } else if (freq === 'weekly') {
-          nextDue.setDate(nextDue.getDate() + 7);
-        } else if (freq === 'monthly') {
-          nextDue.setMonth(nextDue.getMonth() + 1);
-        } else if (freq === 'custom') {
-          const interval = task.recurrence.interval || 1;
-          const unit = task.recurrence.unit || 'days';
-          if (unit === 'days') {
-            nextDue.setDate(nextDue.getDate() + interval);
-          } else if (unit === 'weeks') {
-            nextDue.setDate(nextDue.getDate() + interval * 7);
-          } else if (unit === 'months') {
-            nextDue.setMonth(nextDue.getMonth() + interval);
-          }
-        }
-
-        const timeShiftMs = nextDue.getTime() - currentDue.getTime();
-        let nextReminder: Timestamp | null = null;
-        if (task.reminderTime) {
-          const nextReminderDate = new Date(task.reminderTime.toDate().getTime() + timeShiftMs);
-          nextReminder = Timestamp.fromDate(nextReminderDate);
-        }
-
-        const collRef = collection(db, path);
-        const nextTaskPayload: any = {
-          userId: user.uid,
-          title: task.title,
-          priority: task.priority,
-          category: task.category,
-          completed: false, // next instance starts as incomplete
-          dueDate: Timestamp.fromDate(nextDue),
-          recurrence: task.recurrence, // pass along the recurrence settings for the next instance
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        };
-
-        if (task.description !== undefined) {
-          nextTaskPayload.description = task.description;
-        }
-        if (nextReminder !== null) {
-          nextTaskPayload.reminderTime = nextReminder;
-        }
-        if (task.project !== undefined && task.project !== null) {
-          nextTaskPayload.project = task.project;
-        }
-
-        await addDoc(collRef, nextTaskPayload);
-        triggerToast('Task completed! Custom next scheduled instance created.');
-      } else {
-        triggerToast(task.completed ? 'Task marked as pending.' : 'Congratulations! Task fully completed.');
-      }
+      triggerToast(task.completed ? 'Task marked as pending.' : 'Congratulations! Task fully completed.');
     } catch (error: any) {
       handleFirestoreError(error, OperationType.UPDATE, path);
+    } finally {
+      // Release lock synchronously and state-wise
+      togglingTaskIds.current.delete(task.id);
+      setActiveToggles(prev => {
+        const copy = { ...prev };
+        delete copy[task.id];
+        return copy;
+      });
     }
   };
 
