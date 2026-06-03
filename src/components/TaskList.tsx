@@ -30,6 +30,7 @@ export default function TaskList({
   const [selectedPriority, setSelectedPriority] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedProject, setSelectedProject] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   
   // Strong multi-view state key (bind default choice immediately)
   const [viewKey, setViewKey] = useState<string>(() => {
@@ -156,6 +157,21 @@ export default function TaskList({
     }
   };
 
+  const getStatusBadgeStyle = (status: string) => {
+    switch (status) {
+      case 'Completed':
+        return 'text-emerald-700 bg-[#E2FBF0] border-[#A7F3D0] font-bold';
+      case 'In Progress':
+        return 'text-blue-700 bg-[#E0F2FE] border-[#BAE6FD] font-bold';
+      case 'Waiting / Blocked':
+        return 'text-amber-700 bg-[#FEF3C7] border-[#FDE68A] font-bold';
+      case 'Cancelled':
+        return 'text-zinc-500 bg-[#F4F4F5] border-[#D4D4D8] font-bold line-through';
+      default: // 'Not Started'
+        return 'text-slate-600 bg-slate-50 border-slate-300';
+    }
+  };
+
   const formatDate = (date: Date): string => {
     return date.toLocaleDateString('en-US', {
       month: 'short',
@@ -172,11 +188,16 @@ export default function TaskList({
     
     // 1. Filter by Active Tab
     let list = tasks.filter(task => {
-      if (activeTab === 'pending') return !task.completed;
-      if (activeTab === 'completed') return task.completed;
+      const taskStatus = task.status || (task.completed ? 'Completed' : 'Not Started');
+      if (activeTab === 'pending') {
+        return taskStatus === 'Not Started' || taskStatus === 'In Progress' || taskStatus === 'Waiting / Blocked';
+      }
+      if (activeTab === 'completed') {
+        return taskStatus === 'Completed';
+      }
       if (activeTab === 'overdue') {
         const due = task.dueDate.toDate();
-        return !task.completed && due < now;
+        return (taskStatus !== 'Completed' && taskStatus !== 'Cancelled') && due < now;
       }
       return true; // 'all'
     });
@@ -198,6 +219,14 @@ export default function TaskList({
     // 4. Filter by Category
     if (selectedCategory !== 'all') {
       list = list.filter(t => t.category === selectedCategory);
+    }
+
+    // 4.5 Filter by Status
+    if (selectedStatus !== 'all') {
+      list = list.filter(t => {
+        const tStatus = t.status || (t.completed ? 'Completed' : 'Not Started');
+        return tStatus === selectedStatus;
+      });
     }
 
     // 5. Filter by Project
@@ -261,6 +290,7 @@ export default function TaskList({
 
   const renderTaskItem = (task: Task) => {
     const isOverdue = !task.completed && task.dueDate.toDate() < new Date();
+    const taskStatus = task.status || (task.completed ? 'Completed' : 'Not Started');
     
     // Subtask count helpers
     const totalSubtasks = task.subtasks?.length || 0;
@@ -335,6 +365,11 @@ export default function TaskList({
                 {task.category}
               </span>
 
+              {/* Task Status badge */}
+              <span className={`text-[9px] font-bold uppercase border px-2 py-0.5 tracking-wider ${getStatusBadgeStyle(taskStatus)}`}>
+                ● {taskStatus}
+              </span>
+
               {/* Danger Overdue label */}
               {isOverdue && (
                 <span className="text-[9px] font-bold uppercase border border-[#C2410C] bg-[#C2410C] text-white px-2 py-0.5 tracking-wider animate-pulse">
@@ -353,6 +388,22 @@ export default function TaskList({
             </p>
           )}
 
+          {/* Subtask progress bar */}
+          {totalSubtasks > 0 && (
+            <div className="mt-2.5 mb-3 max-w-md w-full">
+              <div className="flex justify-between items-center text-[10px] text-slate-500 font-mono mb-1">
+                <span>Checklist Progress</span>
+                <span className="font-semibold">{completedSubtasks} / {totalSubtasks} completed ({Math.round((completedSubtasks / totalSubtasks) * 100)}%)</span>
+              </div>
+              <div className="w-full bg-slate-200 h-1 border border-[#1A1A1A]/10 rounded-none relative">
+                <div 
+                  className="bg-[#C2410C]/80 h-full transition-all duration-300"
+                  style={{ width: `${(completedSubtasks / totalSubtasks) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Custom Extended Personalization Display inline */}
           <div className="flex flex-wrap gap-2 items-center mb-2 font-mono text-[10px] text-[#1A1A1A]/80">
             {task.estimatedTime !== undefined && (
@@ -361,6 +412,11 @@ export default function TaskList({
             {totalSubtasks > 0 && (
               <span className="bg-amber-100/60 text-amber-900 border border-amber-900/15 px-1.5 py-0.5">
                 checklist ({completedSubtasks}/{totalSubtasks})
+              </span>
+            )}
+            {task.attachments && task.attachments.length > 0 && (
+              <span className="bg-[#EBEAE6] text-slate-850 border border-[#1A1A1A]/10 px-1.5 py-0.5 font-bold flex items-center gap-1" title={`${task.attachments.length} attachment(s)`}>
+                📎 {task.attachments.length} ref{task.attachments.length > 1 ? 's' : ''}
               </span>
             )}
             
@@ -552,6 +608,23 @@ export default function TaskList({
               {categories.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
+            </select>
+          </div>
+
+          {/* Status Select Filter */}
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-white border border-[#1A1A1A] rounded-none">
+            <SlidersHorizontal className="h-3.5 w-3.5 text-[#1A1A1A]/60 shrink-0" />
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="bg-transparent border-none outline-none text-[10px] font-bold uppercase tracking-wider text-[#1A1A1A] cursor-pointer"
+            >
+              <option value="all">Any Status</option>
+              <option value="Not Started">Not Started</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Waiting / Blocked">Blocked</option>
+              <option value="Completed">Completed</option>
+              <option value="Cancelled">Cancelled</option>
             </select>
           </div>
 
@@ -1125,17 +1198,45 @@ export default function TaskList({
                       )}
 
                       {/* Attribute Badges */}
-                      <div className="grid grid-cols-2 gap-3 pt-2">
-                        <div className="p-3 bg-[#F4F3EF] border border-[#1A1A1A]/10 text-left">
-                          <span className="block text-[8px] font-bold text-slate-500 uppercase tracking-widest font-mono">Urgency Priority</span>
-                          <span className="text-sm font-bold uppercase text-[#1A1A1A] font-sans">{selectedTaskForDetail.priority}</span>
+                      <div className="grid grid-cols-3 gap-2 pt-2">
+                        <div className="p-2.5 bg-[#F4F3EF] border border-[#1A1A1A]/10 text-left">
+                          <span className="block text-[8px] font-bold text-slate-500 uppercase tracking-widest font-mono">Priority</span>
+                          <span className="text-xs font-bold uppercase text-[#1A1A1A] font-sans block truncate">{selectedTaskForDetail.priority}</span>
                         </div>
-                        <div className="p-3 bg-[#F4F3EF] border border-[#1A1A1A]/10 text-left">
-                          <span className="block text-[8px] font-bold text-slate-500 uppercase tracking-widest font-mono">Categorical Folder</span>
-                          <span className="text-sm font-bold uppercase text-[#1A1A1A] font-sans flex items-center gap-1">
+                        <div className="p-2.5 bg-[#F4F3EF] border border-[#1A1A1A]/10 text-left">
+                          <span className="block text-[8px] font-bold text-slate-500 uppercase tracking-widest font-mono">Folder</span>
+                          <span className="text-xs font-bold uppercase text-[#1A1A1A] font-sans flex items-center gap-0.5 block truncate">
                             {getCategoryIcon(selectedTaskForDetail.category)}
                             {selectedTaskForDetail.category}
                           </span>
+                        </div>
+                        <div className="p-2.5 bg-[#F4F3EF] border border-[#1A1A1A]/10 text-left">
+                          <span className="block text-[8px] font-bold text-slate-500 uppercase tracking-widest font-mono">Status</span>
+                          <select
+                            value={selectedTaskForDetail.status || (selectedTaskForDetail.completed ? 'Completed' : 'Not Started')}
+                            onChange={async (e) => {
+                              const newStatus = e.target.value;
+                              const isCompleted = newStatus === 'Completed';
+                              try {
+                                const docRef = doc(db, 'tasks', selectedTaskForDetail.id);
+                                await updateDoc(docRef, {
+                                  status: newStatus,
+                                  completed: isCompleted,
+                                  updatedAt: serverTimestamp()
+                                });
+                                setSelectedTaskForDetail({ ...selectedTaskForDetail, status: newStatus, completed: isCompleted });
+                              } catch (err) {
+                                console.error('Drawer status update failed', err);
+                              }
+                            }}
+                            className="bg-transparent text-xs font-bold uppercase text-[#1A1A1A] font-sans border-none outline-none cursor-pointer w-full p-0 py-0.5"
+                          >
+                            <option value="Not Started">Not Started</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Waiting / Blocked">Blocked</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                          </select>
                         </div>
                       </div>
 
@@ -1244,6 +1345,45 @@ export default function TaskList({
                             Private Work-Notes & Credentials:
                           </span>
                           <span className="italic block leading-relaxed max-w-sm break-words pr-2 text-slate-700">{selectedTaskForDetail.notes}</span>
+                        </div>
+                      )}
+
+                      {/* Attachments & References List in Drawer */}
+                      {selectedTaskForDetail.attachments && selectedTaskForDetail.attachments.length > 0 && (
+                        <div className="bg-white p-4 border border-[#1A1A1A] space-y-2 text-left">
+                          <span className="block text-[9px] font-bold text-[#1A1A1A] uppercase tracking-wider font-sans">
+                            📎 Associated References ({selectedTaskForDetail.attachments.length})
+                          </span>
+                          <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                            {selectedTaskForDetail.attachments.map((att: any) => (
+                              <div key={att.id} className="flex items-center justify-between text-xs p-1.5 bg-slate-50 border border-slate-300/30">
+                                <div className="flex items-center gap-2 truncate">
+                                  <span className="text-[8px] font-mono font-bold uppercase px-1 py-0.5 bg-slate-200 text-slate-600">
+                                    {att.type}
+                                  </span>
+                                  {att.type === 'File' || att.type === 'Screenshot' ? (
+                                    <a 
+                                      href={att.url} 
+                                      download={att.name}
+                                      className="font-serif italic font-medium text-[#C2410C] hover:underline truncate"
+                                    >
+                                      {att.name} (Download)
+                                    </a>
+                                  ) : (
+                                    <a 
+                                      href={att.url} 
+                                      target="_blank" 
+                                      referrerPolicy="no-referrer"
+                                      className="font-serif italic font-medium text-[#C2410C] hover:underline truncate"
+                                    >
+                                      {att.name}
+                                    </a>
+                                  )}
+                                </div>
+                                <span className="text-[10px] text-slate-400 font-mono">Resource</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
 

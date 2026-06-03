@@ -13,6 +13,13 @@ export interface RecurrenceSettings {
   unit?: RecurrenceUnit;
 }
 
+export interface Attachment {
+  id: string;
+  name: string;
+  url: string;
+  type: 'GitHub' | 'Google Drive' | 'Figma' | 'Notion' | 'Website' | 'File' | 'Screenshot';
+}
+
 export interface Task {
   id: string; // Document ID
   userId: string;
@@ -27,6 +34,8 @@ export interface Task {
   project?: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  status?: 'Not Started' | 'In Progress' | 'Waiting / Blocked' | 'Completed' | 'Cancelled';
+  attachments?: Attachment[];
   // Extra fields added in SmartTask update
   subtasks?: { id: string; title: string; completed: boolean }[];
   estimatedTime?: number; // hours

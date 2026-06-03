@@ -389,6 +389,8 @@ export default function App() {
     resourceLink?: string;
     dependency?: string;
     estimatedEffort?: string;
+    status?: string;
+    attachments?: any[];
   }) => {
     if (!user) {
       setIsAuthModalOpen(true);
@@ -404,18 +406,20 @@ export default function App() {
       const extraFields = [
         'subtasks', 'estimatedTime', 'notes', 'amount', 'paymentStatus', 'recurringBill',
         'habitType', 'streak', 'shoppingQuantity', 'shoppingStore', 'shoppingCost',
-        'subject', 'studyDuration', 'resourceLink', 'dependency', 'estimatedEffort'
+        'subject', 'studyDuration', 'resourceLink', 'dependency', 'estimatedEffort',
+        'status', 'attachments'
       ];
 
       if (taskToEdit) {
         // UPDATE action (Requires full state to pass rule validation helper)
         const docRef = doc(db, path, taskToEdit.id);
+        const isCompletedField = data.status ? (data.status === 'Completed') : taskToEdit.completed;
         const updatePayload: any = {
           userId: user.uid,
           title: data.title,
           priority: data.priority,
           category: data.category,
-          completed: taskToEdit.completed, // retain completion status
+          completed: isCompletedField, // updated based on status
           dueDate: dueDateTimestamp,
           createdAt: taskToEdit.createdAt, // retain creation timestamp (immutable)
           updatedAt: serverTimestamp(), // update field validated via rules
@@ -448,12 +452,13 @@ export default function App() {
       } else {
         // CREATE action
         const collRef = collection(db, path);
+        const isCompletedField = data.status ? (data.status === 'Completed') : false;
         const createPayload: any = {
           userId: user.uid,
           title: data.title,
           priority: data.priority,
           category: data.category,
-          completed: false, // default new task to incomplete
+          completed: isCompletedField, // updated based on status
           dueDate: dueDateTimestamp,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
@@ -501,11 +506,22 @@ export default function App() {
       return;
     }
 
+    const nextCompletedState = !task.completed;
+    let nextSubtasks = task.subtasks || [];
+    
+    // If the main task is marked completed, mark all subtasks completed only after user confirmation
+    if (nextCompletedState && nextSubtasks.length > 0 && nextSubtasks.some(s => !s.completed)) {
+      const confirmAll = window.confirm('Would you like to mark all subtasks on "' + task.title + '" as Completed?');
+      if (confirmAll) {
+        nextSubtasks = nextSubtasks.map(s => ({ ...s, completed: true }));
+      }
+    }
+
     // Set locks synchronously and via state
     togglingTaskIds.current.add(task.id);
     setActiveToggles(prev => ({ ...prev, [task.id]: true }));
     const path = 'tasks';
-    const nextCompletedState = !task.completed;
+    const nextStatusState = nextCompletedState ? 'Completed' : 'Not Started';
     
     try {
       const docRef = doc(db, path, task.id);
@@ -516,6 +532,7 @@ export default function App() {
         priority: task.priority,
         category: task.category,
         completed: nextCompletedState,
+        status: nextStatusState,
         dueDate: task.dueDate,
         createdAt: task.createdAt, // retain immutable fields
         updatedAt: serverTimestamp(),
@@ -533,6 +550,20 @@ export default function App() {
       if (task.project !== undefined && task.project !== null) {
         payload.project = task.project;
       }
+
+      // Copy all other fields to prevent loss on completion toggle
+      const extraFields = [
+        'estimatedTime', 'notes', 'amount', 'paymentStatus', 'recurringBill',
+        'habitType', 'streak', 'shoppingQuantity', 'shoppingStore', 'shoppingCost',
+        'subject', 'studyDuration', 'resourceLink', 'dependency', 'estimatedEffort',
+        'attachments'
+      ];
+      extraFields.forEach(f => {
+        if ((task as any)[f] !== undefined && (task as any)[f] !== null) {
+          payload[f] = (task as any)[f];
+        }
+      });
+      payload.subtasks = nextSubtasks;
 
       await updateDoc(docRef, payload);
 

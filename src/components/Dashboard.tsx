@@ -10,47 +10,52 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ tasks, onSelectTab, activeTab }: DashboardProps) {
-  const total = tasks.length;
-  const completed = tasks.filter(t => t.completed).length;
-  const pending = tasks.filter(t => !t.completed).length;
+  const nonCancelledTasks = useMemo(() => tasks.filter(t => t.status !== 'Cancelled'), [tasks]);
+  const total = nonCancelledTasks.length;
+  
+  const completed = useMemo(() => nonCancelledTasks.filter(t => t.status ? t.status === 'Completed' : t.completed).length, [nonCancelledTasks]);
+  const pending = useMemo(() => nonCancelledTasks.filter(t => t.status ? (t.status === 'Not Started' || t.status === 'In Progress' || t.status === 'Waiting / Blocked') : !t.completed).length, [nonCancelledTasks]);
   
   const now = new Date();
-  const overdue = tasks.filter(t => {
-    if (t.completed) return false;
+  const overdue = useMemo(() => nonCancelledTasks.filter(t => {
+    const isCompleted = t.status ? t.status === 'Completed' : t.completed;
+    if (isCompleted) return false;
     const due = t.dueDate.toDate();
     return due < now;
-  }).length;
+  }).length, [nonCancelledTasks, now]);
 
   // Today Command Center Intelligence calculations
   const suggestedFocusTask = useMemo(() => {
-    const incomplete = tasks.filter(t => !t.completed);
+    const incomplete = nonCancelledTasks.filter(t => t.status ? (t.status === 'Not Started' || t.status === 'In Progress' || t.status === 'Waiting / Blocked') : !t.completed);
     const high = incomplete.filter(t => t.priority === 'high');
     if (high.length > 0) return high[0];
     const med = incomplete.filter(t => t.priority === 'medium');
     if (med.length > 0) return med[0];
     return incomplete[0] || null;
-  }, [tasks]);
+  }, [nonCancelledTasks]);
 
   const overdueTasksList = useMemo(() => {
-    return tasks.filter(t => {
-      if (t.completed) return false;
+    return nonCancelledTasks.filter(t => {
+      const isCompleted = t.status ? t.status === 'Completed' : t.completed;
+      if (isCompleted) return false;
       const due = t.dueDate.toDate();
       return due < now;
     });
-  }, [tasks, now]);
+  }, [nonCancelledTasks, now]);
 
   const upcomingDeadlinesList = useMemo(() => {
-    return tasks.filter(t => {
-      if (t.completed) return false;
+    return nonCancelledTasks.filter(t => {
+      const isCompleted = t.status ? t.status === 'Completed' : t.completed;
+      if (isCompleted) return false;
       const due = t.dueDate.toDate();
       const diffMs = due.getTime() - now.getTime();
       const diffDays = diffMs / (1000 * 60 * 60 * 24);
       return diffDays >= 0 && diffDays <= 3;
     });
-  }, [tasks, now]);
+  }, [nonCancelledTasks, now]);
 
   const totalEstimatedWorkload = useMemo(() => {
-    const incomplete = tasks.filter(t => !t.completed);
+    const incomplete = nonCancelledTasks.filter(t => t.status ? (t.status === 'Not Started' || t.status === 'In Progress' || t.status === 'Waiting / Blocked') : !t.completed);
     let totalHours = 0;
     incomplete.forEach(t => {
       if (t.estimatedTime !== undefined) {
@@ -60,22 +65,32 @@ export default function Dashboard({ tasks, onSelectTab, activeTab }: DashboardPr
       }
     });
     return totalHours;
-  }, [tasks]);
+  }, [nonCancelledTasks]);
 
   // Completion Percentage
   const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   // Priority Stats
-  const highPriority = tasks.filter(t => !t.completed && t.priority === 'high').length;
-  const medPriority = tasks.filter(t => !t.completed && t.priority === 'medium').length;
-  const lowPriority = tasks.filter(t => !t.completed && t.priority === 'low').length;
+  const highPriority = nonCancelledTasks.filter(t => {
+    const isCompleted = t.status ? t.status === 'Completed' : t.completed;
+    return !isCompleted && t.priority === 'high';
+  }).length;
+  const medPriority = nonCancelledTasks.filter(t => {
+    const isCompleted = t.status ? t.status === 'Completed' : t.completed;
+    return !isCompleted && t.priority === 'medium';
+  }).length;
+  const lowPriority = nonCancelledTasks.filter(t => {
+    const isCompleted = t.status ? t.status === 'Completed' : t.completed;
+    return !isCompleted && t.priority === 'low';
+  }).length;
 
   // Category counts
   const categories: Record<string, number> = {
     Work: 0, Personal: 0, Education: 0, Health: 0, Shopping: 0, Finance: 0, Other: 0
   };
-  tasks.forEach(t => {
-    if (!t.completed && categories[t.category] !== undefined) {
+  nonCancelledTasks.forEach(t => {
+    const isCompleted = t.status ? t.status === 'Completed' : t.completed;
+    if (!isCompleted && categories[t.category] !== undefined) {
       categories[t.category]++;
     }
   });
@@ -113,7 +128,7 @@ export default function Dashboard({ tasks, onSelectTab, activeTab }: DashboardPr
     const endOfDay = new Date(targetDay);
     endOfDay.setHours(23, 59, 59, 999);
     
-    const tasksOnDay = tasks.filter(t => {
+    const tasksOnDay = nonCancelledTasks.filter(t => {
       if (!t.dueDate) return false;
       try {
         const tDate = t.dueDate.toDate();
@@ -124,7 +139,7 @@ export default function Dashboard({ tasks, onSelectTab, activeTab }: DashboardPr
     });
 
     const totalOnDay = tasksOnDay.length;
-    const completedOnDay = tasksOnDay.filter(t => t.completed).length;
+    const completedOnDay = tasksOnDay.filter(t => t.status ? t.status === 'Completed' : t.completed).length;
     const rate = totalOnDay > 0 ? Math.round((completedOnDay / totalOnDay) * 100) : 0;
 
     return {

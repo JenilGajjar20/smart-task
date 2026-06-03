@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { X, Calendar, Flag, Tag, Sparkles, Clock, Folder } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
-import { Task, Priority, Category, RecurrenceFrequency, RecurrenceUnit, RecurrenceSettings } from '../types';
+import { Task, Priority, Category, RecurrenceFrequency, RecurrenceUnit, RecurrenceSettings, Attachment } from '../types';
 
 interface TaskFormProps {
   taskToEdit?: Task | null;
@@ -32,6 +32,8 @@ interface TaskFormProps {
     resourceLink?: string;
     dependency?: string;
     estimatedEffort?: string;
+    status?: 'Not Started' | 'In Progress' | 'Waiting / Blocked' | 'Completed' | 'Cancelled';
+    attachments?: Attachment[];
   }) => Promise<void>;
   onClose: () => void;
 }
@@ -54,6 +56,11 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
   const [estimatedTime, setEstimatedTime] = useState<number>(1);
   const [notes, setNotes] = useState('');
   
+  // For Attachment & Reference links
+  const [newLinkUrl, setNewLinkUrl] = useState('');
+  const [newLinkLabel, setNewLinkLabel] = useState('');
+  const [editingAttachmentId, setEditingAttachmentId] = useState<string | null>(null);
+  
   // Category-specific fields states
   const [amount, setAmount] = useState<number>(0);
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid'>('pending');
@@ -68,6 +75,20 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
   const [resourceLink, setResourceLink] = useState('');
   const [dependency, setDependency] = useState('');
   const [estimatedEffort, setEstimatedEffort] = useState('Medium');
+  
+  const [status, setStatus] = useState<'Not Started' | 'In Progress' | 'Waiting / Blocked' | 'Completed' | 'Cancelled'>('Not Started');
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  
+  // Inline checklist editing state
+  const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
+  const [editingSubtaskValue, setEditingSubtaskValue] = useState('');
+
+  // Automatically set status to Waiting / Blocked when workspace dependency is filled
+  useEffect(() => {
+    if (dependency.trim() && status !== 'Waiting / Blocked' && status !== 'Completed' && status !== 'Cancelled') {
+      setStatus('Waiting / Blocked');
+    }
+  }, [dependency]);
   
   // Format dates to ISO-like local datetime-local string
   const formatDateToInput = (dateObj?: Date | null): string => {
@@ -95,6 +116,75 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const detectLinkType = (url: string): 'GitHub' | 'Google Drive' | 'Figma' | 'Notion' | 'Website' => {
+    const lower = url.toLowerCase();
+    if (lower.includes('github.com')) return 'GitHub';
+    if (lower.includes('drive.google.com') || lower.includes('google.com/drive')) return 'Google Drive';
+    if (lower.includes('figma.com')) return 'Figma';
+    if (lower.includes('notion.so') || lower.includes('notion.com') || lower.includes('notion.site')) return 'Notion';
+    return 'Website';
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64Url = reader.result as string;
+        const newAttachment: Attachment = {
+          id: 'file-' + Date.now(),
+          name: file.name,
+          url: base64Url,
+          type: file.type.startsWith('image/') ? 'Screenshot' : 'File'
+        };
+        setAttachments(prev => [...prev, newAttachment]);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAddLink = () => {
+    if (!newLinkUrl.trim()) return;
+    
+    let targetUrl = newLinkUrl.trim();
+    if (!/^https?:\/\//i.test(targetUrl)) {
+      targetUrl = 'https://' + targetUrl;
+    }
+    
+    try {
+      new URL(targetUrl);
+    } catch (_) {
+      setError('Please provide a secure, fully formed URL (e.g. google.com).');
+      return;
+    }
+
+    const type = detectLinkType(targetUrl);
+    const label = newLinkLabel.trim() || targetUrl.replace(/^https?:\/\/(www\.)?/, '').split('/')[0];
+    
+    if (editingAttachmentId) {
+      setAttachments(prev => prev.map(att => att.id === editingAttachmentId ? { ...att, name: label, url: targetUrl, type } : att));
+      setEditingAttachmentId(null);
+    } else {
+      const newAttachment: Attachment = {
+        id: 'link-' + Date.now(),
+        name: label,
+        url: targetUrl,
+        type
+      };
+      setAttachments(prev => [...prev, newAttachment]);
+    }
+    
+    setNewLinkUrl('');
+    setNewLinkLabel('');
+  };
+
+  const handleEditAttachment = (att: Attachment) => {
+    setEditingAttachmentId(att.id);
+    setNewLinkUrl(att.url);
+    setNewLinkLabel(att.name);
+  };
 
   useEffect(() => {
     if (taskToEdit) {
@@ -137,6 +227,8 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
       setResourceLink(taskToEdit.resourceLink || '');
       setDependency(taskToEdit.dependency || '');
       setEstimatedEffort(taskToEdit.estimatedEffort || 'Medium');
+      setStatus(taskToEdit.status || (taskToEdit.completed ? 'Completed' : 'Not Started'));
+      setAttachments(taskToEdit.attachments || []);
     } else {
       setFormMode('quick');
       setTitle('');
@@ -166,6 +258,8 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
       setResourceLink('');
       setDependency('');
       setEstimatedEffort('Medium');
+      setStatus('Not Started');
+      setAttachments([]);
     }
   }, [taskToEdit]);
 
@@ -236,6 +330,8 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
         resourceLink: resourceLink.trim() || undefined,
         dependency: dependency.trim() || undefined,
         estimatedEffort,
+        status,
+        attachments,
       });
       onClose();
     } catch (err: any) {
@@ -425,6 +521,28 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
 
             {formMode === 'advanced' && (
               <>
+                {/* Task Lifecycle Status */}
+                <div className="bg-white p-4 border border-[#1A1A1A] space-y-2">
+                  <label className="block text-[10px] font-bold text-[#1A1A1A] uppercase tracking-[0.15em] font-sans flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5 text-[#C2410C]" /> Task Lifecycle Status
+                  </label>
+                  <select
+                    id="task-status-select"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value as any)}
+                    className="w-full px-3 py-2.5 bg-white border border-[#1A1A1A] rounded-none outline-none text-[#1A1A1A] text-xs font-serif transition-all cursor-pointer"
+                  >
+                    <option value="Not Started">Not Started</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Waiting / Blocked">Waiting / Blocked</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                  <p className="text-[9px] text-slate-500 font-serif italic">
+                    Indicates current execution phase. Marking "Completed" updates your performance parameters automatically.
+                  </p>
+                </div>
+
                 {/* Category-Specific Form Enhancements */}
                 <div className="p-4 border border-[#1A1A1A] bg-[#F1EFEA]">
               <div className="flex items-center gap-2 mb-2 pb-1 border-b border-[#1A1A1A]/10">
@@ -634,37 +752,101 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
                 Interactive Checklists / Subtasks ({subtasks.length})
               </span>
               
-              {subtasks.length > 0 && (
+              {subtasks.length > 0 ? (
                 <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
-                  {subtasks.map((sub, idx) => (
-                    <div key={sub.id} className="flex items-center justify-between bg-[#F9F8F6] p-2 border border-[#1A1A1A]/10">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={sub.completed}
-                          onChange={(e) => {
-                            const updated = [...subtasks];
-                            updated[idx].completed = e.target.checked;
-                            setSubtasks(updated);
-                          }}
-                          className="rounded-none border-[#1A1A1A] h-3.5 w-3.5 text-[#1A1A1A]"
-                        />
-                        <span className={`text-xs font-serif ${sub.completed ? 'line-through text-slate-400' : 'text-[#1A1A1A]'}`}>
-                          {sub.title}
-                        </span>
+                  {subtasks.map((sub, idx) => {
+                    const isEditing = editingSubtaskId === sub.id;
+                    return (
+                      <div key={sub.id} className="flex items-center justify-between bg-[#F9F8F6] p-2 border border-[#1A1A1A]/10">
+                        {isEditing ? (
+                          <div className="flex items-center gap-1.5 w-full">
+                            <input
+                              type="text"
+                              value={editingSubtaskValue}
+                              onChange={(e) => setEditingSubtaskValue(e.target.value)}
+                              className="flex-1 px-2 py-0.5 bg-white border border-[#1A1A1A] text-xs outline-none font-serif"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  if (editingSubtaskValue.trim()) {
+                                    const updated = [...subtasks];
+                                    updated[idx].title = editingSubtaskValue.trim();
+                                    setSubtasks(updated);
+                                    setEditingSubtaskId(null);
+                                  }
+                                } else if (e.key === 'Escape') {
+                                  setEditingSubtaskId(null);
+                                }
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (editingSubtaskValue.trim()) {
+                                  const updated = [...subtasks];
+                                  updated[idx].title = editingSubtaskValue.trim();
+                                  setSubtasks(updated);
+                                  setEditingSubtaskId(null);
+                                }
+                              }}
+                              className="text-emerald-700 hover:text-emerald-900 text-[10px] uppercase font-bold px-1"
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingSubtaskId(null)}
+                              className="text-slate-500 hover:text-slate-800 text-[10px] uppercase font-bold px-1"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={sub.completed}
+                                onChange={(e) => {
+                                  const updated = [...subtasks];
+                                  updated[idx].completed = e.target.checked;
+                                  setSubtasks(updated);
+                                }}
+                                className="rounded-none border-[#1A1A1A] h-3.5 w-3.5 text-[#1A1A1A]"
+                              />
+                              <span className={`text-xs font-serif ${sub.completed ? 'line-through text-slate-400' : 'text-[#1A1A1A]'}`}>
+                                {sub.title}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingSubtaskId(sub.id);
+                                  setEditingSubtaskValue(sub.title);
+                                }}
+                                className="text-blue-700 hover:text-blue-900 text-[10px] font-mono hover:underline uppercase font-bold cursor-pointer"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSubtasks(subtasks.filter((_, i) => i !== idx));
+                                }}
+                                className="text-rose-600 hover:text-rose-800 text-[10px] font-mono hover:underline uppercase font-bold cursor-pointer"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSubtasks(subtasks.filter((_, i) => i !== idx));
-                        }}
-                        className="text-rose-600 hover:text-rose-800 text-[10px] font-mono hover:underline uppercase font-bold cursor-pointer"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
+              ) : (
+                <p className="text-[11px] text-slate-400 italic">No subtasks added yet.</p>
               )}
 
               <div className="flex gap-2">
@@ -696,6 +878,108 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
                 >
                   Add
                 </button>
+              </div>
+            </div>
+
+            {/* Attachments & Reference Links Section */}
+            <div className="bg-white p-4 rounded-none border border-[#1A1A1A] space-y-3 font-sans">
+              <span className="block text-[10px] font-bold text-[#1A1A1A] uppercase tracking-[0.15em] font-sans">
+                Attachments & Reference Links ({attachments.length})
+              </span>
+
+              {attachments.length > 0 ? (
+                <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
+                  {attachments.map((att) => (
+                    <div key={att.id} className="flex items-center justify-between bg-[#F9F8F6] p-2 border border-[#1A1A1A]/10 text-xs">
+                      <div className="flex items-center gap-2 truncate">
+                        <span className="font-bold text-slate-500 font-mono text-[9px] uppercase tracking-wider bg-[#EBEAE6] px-1 py-0.5">
+                          {att.type}
+                        </span>
+                        <span className="font-serif italic font-semibold text-[#1a1a1a] truncate" title={att.url}>
+                          {att.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        {att.type !== 'File' && att.type !== 'Screenshot' && (
+                          <button
+                            type="button"
+                            onClick={() => handleEditAttachment(att)}
+                            className="text-blue-700 hover:text-blue-900 text-[10px] font-mono hover:underline uppercase font-bold cursor-pointer"
+                          >
+                            Edit
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setAttachments(prev => prev.filter(item => item.id !== att.id))}
+                          className="text-rose-600 hover:text-rose-800 text-[10px] font-mono hover:underline uppercase font-bold cursor-pointer"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-slate-400 italic">No attachments or reference links added yet.</p>
+              )}
+
+              {/* Add form */}
+              <div className="space-y-2 border-t border-[#1A1A1A]/10 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    placeholder="URL Link (e.g. github.com/...)"
+                    value={newLinkUrl}
+                    onChange={(e) => setNewLinkUrl(e.target.value)}
+                    className="px-3 py-1.5 bg-white border border-[#1A1A1A] rounded-none outline-none text-xs font-serif"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Optional Link Title"
+                    value={newLinkLabel}
+                    onChange={(e) => setNewLinkLabel(e.target.value)}
+                    className="px-3 py-1.5 bg-white border border-[#1A1A1A] rounded-none outline-none text-xs font-serif"
+                  />
+                </div>
+                
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                  <div className="flex items-center gap-2">
+                    <label className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold text-[9px] uppercase tracking-wider rounded-none cursor-pointer inline-flex items-center gap-1 font-sans">
+                      <span>📁 Attach Files</span>
+                      <input 
+                        type="file" 
+                        onChange={handleFileUpload} 
+                        className="hidden" 
+                        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
+                      />
+                    </label>
+                    <span className="text-[9px] text-slate-400">PDF, TXT, ZIP, Images</span>
+                  </div>
+
+                  <div className="flex gap-1.5">
+                    {editingAttachmentId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingAttachmentId(null);
+                          setNewLinkUrl('');
+                          setNewLinkLabel('');
+                        }}
+                        className="px-2.5 py-1 bg-transparent hover:bg-slate-100 text-slate-600 border border-slate-300 font-bold text-[9px] uppercase tracking-wider rounded-none cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleAddLink}
+                      className="px-2.5 py-1 bg-[#1A1A1A] hover:bg-[#C2410C] text-white font-bold text-[9px] uppercase tracking-wider rounded-none cursor-pointer"
+                    >
+                      {editingAttachmentId ? 'Save' : 'Add Link'}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
               </>
