@@ -1,0 +1,64 @@
+{
+  "entities": {
+    "Task": {
+      "title": "Task",
+      "description": "A user-created task with priority, due date, status, category, and reminder settings.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The Firebase Authentication UID of the owner."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the task. Max 100 chars."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the task."
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["low", "medium", "high"],
+          "description": "The priority level of the task."
+        },
+        "category": {
+          "type": "string",
+          "enum": ["Work", "Personal", "Education", "Health", "Shopping", "Finance", "Other"],
+          "description": "The category context of the task."
+        },
+        "completed": {
+          "type": "boolean",
+          "description": "Completion status of the task."
+        },
+        "dueDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp for when the task is due."
+        },
+        "reminderTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp for an optional set reminder alert."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp of task creation."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp of last task update."
+        }
+      },
+      "required": ["userId", "title", "priority", "category", "completed", "dueDate", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "tasks/{taskId}": {
+      "schema": "Task",
+      "description": "All tasks stored securely under a random document ID."
+    }
+  }
+}

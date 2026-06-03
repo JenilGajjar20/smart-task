@@ -1,0 +1,72 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net Default-Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helper Functions ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Task entity validation ---
+    function isValidTask(task) {
+      return task.keys().hasAll(['userId', 'title', 'priority', 'category', 'completed', 'dueDate', 'createdAt', 'updatedAt']) &&
+             task.keys().size() >= 8 && task.keys().size() <= 10 &&
+             task.userId == request.auth.uid &&
+             task.title is string && task.title.size() >= 1 && task.title.size() <= 100 &&
+             task.priority is string && (task.priority == 'low' || task.priority == 'medium' || task.priority == 'high') &&
+             task.category is string && (task.category == 'Work' || task.category == 'Personal' || task.category == 'Education' || task.category == 'Health' || task.category == 'Shopping' || task.category == 'Finance' || task.category == 'Other') &&
+             task.completed is bool &&
+             task.dueDate is timestamp &&
+             task.createdAt is timestamp &&
+             task.updatedAt is timestamp &&
+             (!task.keys().hasAll(['description']) || (task.description is string && task.description.size() <= 1000)) &&
+             (!task.keys().hasAll(['reminderTime']) || task.reminderTime is timestamp);
+    }
+
+    // 2. Fortress Rules for tasks collection
+    match /tasks/{taskId} {
+      allow get: if isVerifiedUser() && existing().userId == request.auth.uid && isValidId(taskId);
+      
+      allow list: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+
+      allow create: if isVerifiedUser() && 
+                    isValidId(taskId) && 
+                    isValidTask(incoming()) && 
+                    incoming().createdAt == request.time && 
+                    incoming().updatedAt == request.time;
+
+      allow update: if isVerifiedUser() && 
+                    isValidId(taskId) && 
+                    existing().userId == request.auth.uid && 
+                    incoming().userId == request.auth.uid && 
+                    isValidTask(incoming()) && 
+                    incoming().createdAt == existing().createdAt && 
+                    incoming().updatedAt == request.time;
+
+      allow delete: if isVerifiedUser() && 
+                    isValidId(taskId) && 
+                    existing().userId == request.auth.uid;
+    }
+  }
+}

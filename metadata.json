@@ -1,0 +1,6 @@
+{
+  "name": "SmartTask",
+  "description": "A feature-rich task management application featuring priority categories, progress tracking, customized reminders, and visual status dashboards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
