@@ -78,5 +78,12 @@ service cloud.firestore {
                     isValidId(taskId) && 
                     existing().userId == request.auth.uid;
     }
+
+    // 3. Fortress Rules for settings collection
+    match /settings/{userId} {
+      allow get: if isVerifiedUser() && userId == request.auth.uid && isValidId(userId);
+      allow create, update: if isVerifiedUser() && userId == request.auth.uid && isValidId(userId) && incoming().userId == request.auth.uid;
+      allow delete: if isVerifiedUser() && userId == request.auth.uid && isValidId(userId);
+    }
   }
 }

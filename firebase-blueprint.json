@@ -75,12 +75,64 @@
         }
       },
       "required": ["userId", "title", "priority", "category", "completed", "dueDate", "createdAt", "updatedAt"]
+    },
+    "WorkspaceSettings": {
+      "title": "WorkspaceSettings",
+      "description": "User-specific workspace preferences and profiles.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The Firebase Authentication UID of the owner."
+        },
+        "theme": {
+          "type": "string",
+          "description": "Selected visual theme."
+        },
+        "darkMode": {
+          "type": "boolean",
+          "description": "Contrast mode preference."
+        },
+        "profileNickname": {
+          "type": "string",
+          "description": "User's display brand or name."
+        },
+        "profileRole": {
+          "type": "string",
+          "description": "Professional or vocational role."
+        },
+        "profileStation": {
+          "type": "string",
+          "description": "Workspace hub assignment."
+        },
+        "defaultCategory": {
+          "type": "string",
+          "description": "Standard category assigned to new tasks."
+        },
+        "defaultPriority": {
+          "type": "string",
+          "description": "Standard priority assigned to new tasks."
+        },
+        "timeFormat": {
+          "type": "string",
+          "description": "Clock display setting (12h/24h)."
+        },
+        "deskSounds": {
+          "type": "boolean",
+          "description": "Whether chimes are enabled."
+        }
+      },
+      "required": ["userId"]
     }
   },
   "firestore": {
     "tasks/{taskId}": {
       "schema": "Task",
       "description": "All tasks stored securely under a random document ID."
+    },
+    "settings/{userId}": {
+      "schema": "WorkspaceSettings",
+      "description": "User-specific settings stored securely under their UID."
     }
   }
 }

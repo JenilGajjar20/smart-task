@@ -28,279 +28,518 @@
 }
 
 /* ==========================================================================
-   THEME STYLING CONFIGURATIONS
+   THEME &. CONTRAST SYSTEM STYLING CONFIGURATIONS
    ========================================================================== */
 
-/* --- 1. MIDNIGHT COSMIC (CYBERPUNK INDIGO DARK THEME) --- */
-.theme-cosmic {
-  background-color: #0A0E17 !important;
-  color: #ECEFF4 !important;
+/* --- GLOBAL DARK CONTRAST SYSTEM OVERLAYS --- */
+.dark-themed select,
+.dark-themed input,
+.dark-themed textarea {
+  background-color: #1C1C1E;
+  color: #F3F4F6;
+  border-color: #444446;
+}
+.dark-themed select option {
+  background-color: #1C1C1E;
+  color: #F3F4F6;
+}
+.dark-themed .hover\:bg-slate-50:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-.theme-cosmic.min-h-screen {
-  background-color: #0A0E17 !important;
+/* --- 1. EDITORIAL THEME (LIGHT & DARK VARIATIONS) --- */
+.theme-editorial.light-themed {
+  background-color: #F9F8F6 !important;
+  color: #1A1A1A !important;
 }
-
-/* Background class overrides */
-.theme-cosmic .bg-\[\#F9F8F6\] {
-  background-color: #121826 !important;
+.theme-editorial.dark-themed {
+  background-color: #141414 !important;
+  color: #E5E5E5 !important;
 }
-.theme-cosmic .bg-\[\#F4F3EF\] {
-  background-color: #1A2333 !important;
+.theme-editorial.dark-themed .bg-\[\#F9F8F6\] {
+  background-color: #1C1C1C !important;
 }
-.theme-cosmic .bg-white {
-  background-color: #121826 !important;
-  color: #ECEFF4 !important;
+.theme-editorial.dark-themed .bg-\[\#F4F3EF\] {
+  background-color: #242424 !important;
 }
-.theme-cosmic .bg-\[\#1A1A1A\] {
-  background-color: #242F41 !important;
+.theme-editorial.dark-themed .bg-white {
+  background-color: #1C1C1C !important;
+  color: #E5E5E5 !important;
 }
-.theme-cosmic .bg-\[\#EBEAE6\] {
-  background-color: #1E293B !important;
+.theme-editorial.dark-themed .bg-\[\#1A1A1A\] {
+  background-color: #333333 !important;
 }
-
-/* Text overrides */
-.theme-cosmic .text-\[\#1A1A1A\] {
-  color: #ECEFF4 !important;
+.theme-editorial.dark-themed .bg-\[\#EBEAE6\] {
+  background-color: #2D2D2D !important;
 }
-.theme-cosmic .text-\[\#C2410C\] {
-  color: #818CF8 !important; /* Indigo glow */
+.theme-editorial.dark-themed .text-\[\#1A1A1A\] {
+  color: #E5E5E5 !important;
 }
-.theme-cosmic .text-\[\#666\] {
-  color: #94A3B8 !important; /* Muted Slate */
+.theme-editorial.dark-themed .text-\[\#C2410C\] {
+  color: #F97316 !important; /* Terracotta glow */
 }
-.theme-cosmic .text-slate-500,
-.theme-cosmic .text-slate-600 {
-  color: #94A3B8 !important;
+.theme-editorial.dark-themed .border-\[\#1A1A1A\] {
+  border-color: #444444 !important;
 }
-.theme-cosmic .text-slate-700 {
-  color: #CBD5E1 !important;
+.theme-editorial.dark-themed .border-b-\[\#1A1A1A\],
+.theme-editorial.dark-themed .border-t-\[\#1A1A1A\],
+.theme-editorial.dark-themed .border-l-\[\#1A1A1A\],
+.theme-editorial.dark-themed .border-r-\[\#1A1A1A\],
+.theme-editorial.dark-themed .border-b,
+.theme-editorial.dark-themed .border-t {
+  border-color: #444444 !important;
 }
-
-/* Border overrides */
-.theme-cosmic .border-\[\#1A1A1A\] {
-  border-color: #334155 !important;
+.theme-editorial.dark-themed .border-\[\#1A1A1A\]\/10,
+.theme-editorial.dark-themed .border-\[\#1A1A1A\]\/20,
+.theme-editorial.dark-themed .border-\[\#1A1A1A\]\/30 {
+  border-color: rgba(255, 255, 255, 0.12) !important;
 }
-.theme-cosmic .border-b-\[\#1A1A1A\],
-.theme-cosmic .border-t-\[\#1A1A1A\],
-.theme-cosmic .border-l-\[\#1A1A1A\],
-.theme-cosmic .border-r-\[\#1A1A1A\] {
-  border-color: #334155 !important;
-}
-.theme-cosmic .border-b,
-.theme-cosmic .border-t {
-  border-color: #334155 !important;
-}
-.theme-cosmic .border-\[\#1A1A1A\]\/10,
-.theme-cosmic .border-\[\#1A1A1A\]\/20,
-.theme-cosmic .border-\[\#1A1A1A\]\/30 {
-  border-color: rgba(71, 85, 105, 0.45) !important;
-}
-.theme-cosmic .border-\[\#C2410C\] {
-  border-color: #6366F1 !important;
-}
-
-/* Specific component accent elements */
-.theme-cosmic .bg-\[\#C2410C\] {
-  background-color: #6366F1 !important;
+.theme-editorial.dark-themed .bg-\[\#C2410C\] {
+  background-color: #F97316 !important;
   color: #FFFFFF !important;
 }
-.theme-cosmic .bg-\[\#C2410C\]\/5 {
-  background-color: rgba(99, 102, 241, 0.08) !important;
+.theme-editorial.dark-themed .border-\[\#C2410C\] {
+  border-color: #F97316 !important;
 }
-.theme-cosmic .bg-\[\#C2410C\]\/20 {
-  background-color: rgba(99, 102, 241, 0.25) !important;
+.theme-editorial.dark-themed .text-[#C2410C] {
+  color: #F97316 !important;
 }
-.theme-cosmic .hover\:bg-\[\#1A1A1A\]:hover {
+.theme-editorial.dark-themed .border-[#C2410C] {
+  border-color: #F97316 !important;
+}
+.theme-editorial.dark-themed .bg-[#C2410C] {
+  background-color: #F97316 !important;
+}
+.theme-editorial.dark-themed .bg-\[\#C2410C\]\/5 {
+  background-color: rgba(249, 115, 22, 0.08) !important;
+}
+.theme-editorial.dark-themed .bg-\[\#C2410C\]\/20 {
+  background-color: rgba(249, 115, 22, 0.2) !important;
+}
+.theme-editorial.dark-themed .bg-red-500\/5 {
+  background-color: rgba(239, 68, 68, 0.08) !important;
+}
+
+/* --- 2. COSMIC THEME (LIGHT & DARK VARIATIONS) --- */
+.theme-cosmic.light-themed {
+  background-color: #F0F4FC !important;
+  color: #1A2333 !important;
+}
+.theme-cosmic.light-themed .bg-\[\#F9F8F6\] {
+  background-color: #E2E8F0 !important;
+}
+.theme-cosmic.light-themed .bg-\[\#F4F3EF\] {
+  background-color: #CBD5E1 !important;
+}
+.theme-cosmic.light-themed .bg-white {
+  background-color: #FFFFFF !important;
+  color: #1A2333 !important;
+}
+.theme-cosmic.light-themed .text-\[\#1A1A1A\] {
+  color: #1A2333 !important;
+}
+.theme-cosmic.light-themed .text-\[\#C2410C\] {
+  color: #4F46E5 !important; /* Space Indigo Glow */
+}
+.theme-cosmic.light-themed .border-\[\#1A1A1A\] {
+  border-color: #94A3B8 !important;
+}
+.theme-cosmic.light-themed .border-b-\[\#1A1A1A\],
+.theme-cosmic.light-themed .border-t-\[\#1A1A1A\],
+.theme-cosmic.light-themed .border-l-\[\#1A1A1A\],
+.theme-cosmic.light-themed .border-r-\[\#1A1A1A\],
+.theme-cosmic.light-themed .border-b,
+.theme-cosmic.light-themed .border-t {
+  border-color: #94A3B8 !important;
+}
+.theme-cosmic.light-themed .border-\[\#1A1A1A\]\/10,
+.theme-cosmic.light-themed .border-\[\#1A1A1A\]\/20,
+.theme-cosmic.light-themed .border-\[\#1A1A1A\]\/30 {
+  border-color: rgba(71, 85, 105, 0.2) !important;
+}
+.theme-cosmic.light-themed .bg-\[\#C2410C\] {
   background-color: #4F46E5 !important;
   color: #FFFFFF !important;
 }
-.theme-cosmic .border-red-500\/30 {
-  border-color: rgba(239, 68, 68, 0.3) !important;
+.theme-cosmic.light-themed .border-\[\#C2410C\] {
+  border-color: #4F46E5 !important;
 }
-.theme-cosmic .bg-red-500\/5 {
-  background-color: rgba(239, 68, 68, 0.05) !important;
+.theme-cosmic.light-themed .text-[#C2410C] {
+  color: #4F46E5 !important;
 }
-.theme-cosmic .hover\:bg-\[\#C2410C\]:hover {
+.theme-cosmic.light-themed .border-[#C2410C] {
+  border-color: #4F46E5 !important;
+}
+.theme-cosmic.light-themed .bg-[#C2410C] {
+  background-color: #4F46E5 !important;
+}
+.theme-cosmic.light-themed .bg-red-500\/5 {
+  background-color: rgba(79, 70, 229, 0.05) !important;
+}
+
+/* Cosmic Dark Mode */
+.theme-cosmic.dark-themed {
+  background-color: #0A0E17 !important;
+  color: #ECEFF4 !important;
+}
+.theme-cosmic.dark-themed .bg-\[\#F9F8F6\] {
+  background-color: #121826 !important;
+}
+.theme-cosmic.dark-themed .bg-\[\#F4F3EF\] {
+  background-color: #1A2333 !important;
+}
+.theme-cosmic.dark-themed .bg-white {
+  background-color: #121826 !important;
+  color: #ECEFF4 !important;
+}
+.theme-cosmic.dark-themed .bg-\[\#1A1A1A\] {
+  background-color: #242F41 !important;
+}
+.theme-cosmic.dark-themed .bg-\[\#EBEAE6\] {
+  background-color: #1E293B !important;
+}
+.theme-cosmic.dark-themed .text-\[\#1A1A1A\] {
+  color: #ECEFF4 !important;
+}
+.theme-cosmic.dark-themed .text-\[\#C2410C\] {
+  color: #818CF8 !important; /* Cyberpunk neon indigo */
+}
+.theme-cosmic.dark-themed .border-\[\#1A1A1A\] {
+  border-color: #334155 !important;
+}
+.theme-cosmic.dark-themed .border-b-\[\#1A1A1A\],
+.theme-cosmic.dark-themed .border-t-\[\#1A1A1A\],
+.theme-cosmic.dark-themed .border-l-\[\#1A1A1A\],
+.theme-cosmic.dark-themed .border-r-\[\#1A1A1A\],
+.theme-cosmic.dark-themed .border-b,
+.theme-cosmic.dark-themed .border-t {
+  border-color: #334155 !important;
+}
+.theme-cosmic.dark-themed .border-\[\#1A1A1A\]\/10,
+.theme-cosmic.dark-themed .border-\[\#1A1A1A\]\/20,
+.theme-cosmic.dark-themed .border-\[\#1A1A1A\]\/30 {
+  border-color: rgba(148, 163, 184, 0.2) !important;
+}
+.theme-cosmic.dark-themed .bg-\[\#C2410C\] {
+  background-color: #6366F1 !important;
+  color: #FFFFFF !important;
+}
+.theme-cosmic.dark-themed .border-\[\#C2410C\] {
+  border-color: #6366F1 !important;
+}
+.theme-cosmic.dark-themed .text-[#C2410C] {
+  color: #6366F1 !important;
+}
+.theme-cosmic.dark-themed .border-[#C2410C] {
+  border-color: #6366F1 !important;
+}
+.theme-cosmic.dark-themed .bg-[#C2410C] {
+  background-color: #6366F1 !important;
+}
+.theme-cosmic.dark-themed .bg-\[\#C2410C\]\/5 {
+  background-color: rgba(99, 102, 241, 0.08) !important;
+}
+.theme-cosmic.dark-themed .bg-\[\#C2410C\]\/20 {
+  background-color: rgba(99, 102, 241, 0.25) !important;
+}
+.theme-cosmic.dark-themed .hover\:bg-\[\#1A1A1A\]:hover {
+  background-color: #4F46E5 !important;
+  color: #FFFFFF !important;
+}
+.theme-cosmic.dark-themed .hover\:bg-\[\#C2410C\]:hover {
   background-color: #6366F1 !important;
   color: #FFFFFF !important;
   border-color: #6366F1 !important;
 }
+.theme-cosmic.dark-themed .bg-red-500\/5 {
+  background-color: rgba(239, 68, 68, 0.05) !important;
+}
 
-/* Input, select and active typography rules in Cosmic */
-.theme-cosmic select,
-.theme-cosmic input,
-.theme-cosmic textarea {
-  background-color: #121826 !important;
-  color: #ECEFF4 !important;
-  border-color: #334155 !important;
-}
-.theme-cosmic select option {
-  background-color: #121826 !important;
-  color: #ECEFF4 !important;
-}
-.theme-cosmic .text-amber-800 {
-  color: #C084FC !important;
-}
-.theme-cosmic .text-yellow-800 {
-  color: #FB5200 !important;
-}
-.theme-cosmic .text-emerald-800 {
-  color: #34D399 !important;
-}
-.theme-cosmic .text-teal-800 {
-  color: #2DD4BF !important;
-}
-.theme-cosmic h1, 
-.theme-cosmic h2, 
-.theme-cosmic h3, 
-.theme-cosmic h4 {
+/* Ensure clean Cosmic fonts sans-serif override */
+.theme-cosmic h1, .theme-cosmic h2, .theme-cosmic h3, .theme-cosmic h4 {
   font-family: var(--font-sans) !important;
-  letter-spacing: -0.015em !important;
 }
-.theme-cosmic p,
-.theme-cosmic span,
-.theme-cosmic label {
+.theme-cosmic p, .theme-cosmic span, .theme-cosmic label {
   font-family: var(--font-sans) !important;
 }
 .theme-cosmic .font-serif {
   font-family: var(--font-sans) !important;
   font-style: normal !important;
 }
-.theme-cosmic .italic {
-  font-style: italic !important;
-}
 
-/* --- 2. FOREST BOTANICAL (WARM ORGANIC SAGE & GOLD THEME) --- */
-.theme-botanical {
+/* --- 3. BOTANICAL THEME (LIGHT MOSS & DARK DEEP EVERGREEN) --- */
+.theme-botanical.light-themed {
   background-color: #EBF0EC !important;
   color: #1E2D24 !important;
 }
-
-.theme-botanical.min-h-screen {
-  background-color: #EBF0EC !important;
-}
-
-/* Background class overrides */
-.theme-botanical .bg-\[\#F9F8F6\] {
+.theme-botanical.light-themed .bg-\[\#F9F8F6\] {
   background-color: #E2EAE4 !important;
 }
-.theme-botanical .bg-\[\#F4F3EF\] {
+.theme-botanical.light-themed .bg-\[\#F4F3EF\] {
   background-color: #D3DDD5 !important;
 }
-.theme-botanical .bg-white {
+.theme-botanical.light-themed .bg-white {
   background-color: #EDF3EF !important;
   color: #1E2D24 !important;
 }
-.theme-botanical .bg-\[\#1A1A1A\] {
+.theme-botanical.light-themed .bg-\[\#1A1A1A\] {
   background-color: #344B3D !important;
 }
-.theme-botanical .bg-\[\#EBEAE6\] {
+.theme-botanical.light-themed .bg-\[\#EBEAE6\] {
   background-color: #C1CDC4 !important;
 }
-
-/* Text overrides */
-.theme-botanical .text-\[\#1A1A1A\] {
+.theme-botanical.light-themed .text-\[\#1A1A1A\] {
   color: #1E2D24 !important;
 }
-.theme-botanical .text-\[\#C2410C\] {
+.theme-botanical.light-themed .text-\[\#C2410C\] {
   color: #AA7722 !important; /* Sage forest Amber/gold */
 }
-.theme-botanical .text-\[\#666\] {
-  color: #556E5D !important; /* Muted botanical spruce */
-}
-.theme-botanical .text-slate-500,
-.theme-botanical .text-slate-600 {
-  color: #556E5D !important;
-}
-.theme-botanical .text-slate-700 {
-  color: #1E2D24 !important;
-}
-
-/* Border overrides */
-.theme-botanical .border-\[\#1A1A1A\] {
+.theme-botanical.light-themed .border-\[\#1A1A1A\] {
   border-color: #344B3D !important;
 }
-.theme-botanical .border-b-\[\#1A1A1A\],
-.theme-botanical .border-t-\[\#1A1A1A\],
-.theme-botanical .border-l-\[\#1A1A1A\],
-.theme-botanical .border-r-\[\#1A1A1A\] {
+.theme-botanical.light-themed .border-b-\[\#1A1A1A\],
+.theme-botanical.light-themed .border-t-\[\#1A1A1A\],
+.theme-botanical.light-themed .border-l-\[\#1A1A1A\],
+.theme-botanical.light-themed .border-r-\[\#1A1A1A\],
+.theme-botanical.light-themed .border-b,
+.theme-botanical.light-themed .border-t {
   border-color: #344B3D !important;
 }
-.theme-botanical .border-b,
-.theme-botanical .border-t {
-  border-color: #344B3D !important;
+.theme-botanical.light-themed .border-\[\#1A1A1A\]\/10,
+.theme-botanical.light-themed .border-\[\#1A1A1A\]\/20,
+.theme-botanical.light-themed .border-\[\#1A1A1A\]\/30 {
+  border-color: rgba(52, 75, 61, 0.25) !important;
 }
-.theme-botanical .border-\[\#1A1A1A\]\/10,
-.theme-botanical .border-\[\#1A1A1A\]\/20,
-.theme-botanical .border-\[\#1A1A1A\]\/30 {
-  border-color: rgba(52, 75, 61, 0.35) !important;
-}
-.theme-botanical .border-\[\#C2410C\] {
-  border-color: #AA7722 !important;
-}
-
-/* Specific component accent elements */
-.theme-botanical .bg-\[\#C2410C\] {
+.theme-botanical.light-themed .bg-\[\#C2410C\] {
   background-color: #AA7722 !important;
   color: #FFFFFF !important;
 }
-.theme-botanical .bg-\[\#C2410C\]\/5 {
+.theme-botanical.light-themed .border-\[\#C2410C\] {
+  border-color: #AA7722 !important;
+}
+.theme-botanical.light-themed .text-[#C2410C] {
+  color: #AA7722 !important;
+}
+.theme-botanical.light-themed .border-[#C2410C] {
+  border-color: #AA7722 !important;
+}
+.theme-botanical.light-themed .bg-[#C2410C] {
+  background-color: #AA7722 !important;
+}
+.theme-botanical.light-themed .bg-\[\#C2410C\]\/5 {
   background-color: rgba(170, 119, 34, 0.08) !important;
 }
-.theme-botanical .bg-\[\#C2410C\]\/20 {
+.theme-botanical.light-themed .bg-\[\#C2410C\]\/20 {
   background-color: rgba(170, 119, 34, 0.25) !important;
 }
-.theme-botanical .hover\:bg-\[\#1A1A1A\]:hover {
-  background-color: #23342A !important;
-  color: #FFFFFF !important;
-}
-.theme-botanical .border-red-500\/30 {
-  border-color: rgba(170, 119, 34, 0.3) !important;
-}
-.theme-botanical .bg-red-500\/5 {
+.theme-botanical.light-themed .bg-red-500\/5 {
   background-color: rgba(170, 119, 34, 0.05) !important;
-}
-.theme-botanical .hover\:bg-\[\#C2410C\]:hover {
-  background-color: #AA7722 !important;
-  color: #FFFFFF !important;
-  border-color: #AA7722 !important;
 }
 
-/* Inputs, layout and select boxes in Botanical */
-.theme-botanical select,
-.theme-botanical input,
-.theme-botanical textarea {
-  background-color: #EDF3EF !important;
-  color: #1E2D24 !important;
-  border-color: #344B3D !important;
+/* Botanical Dark Mode */
+.theme-botanical.dark-themed {
+  background-color: #111A15 !important;
+  color: #D1DDD5 !important;
 }
-.theme-botanical select option {
-  background-color: #EDF3EF !important;
-  color: #1E2D24 !important;
+.theme-botanical.dark-themed .bg-\[\#F9F8F6\] {
+  background-color: #18241E !important;
 }
-.theme-botanical .text-amber-800 {
-  color: #AA7722 !important;
+.theme-botanical.dark-themed .bg-\[\#F4F3EF\] {
+  background-color: #213028 !important;
 }
-.theme-botanical .text-yellow-800 {
-  color: #925D00 !important;
+.theme-botanical.dark-themed .bg-white {
+  background-color: #18241E !important;
+  color: #D1DDD5 !important;
 }
-.theme-botanical .text-emerald-800 {
-  color: #166534 !important;
+.theme-botanical.dark-themed .bg-\[\#1A1A1A\] {
+  background-color: #2D3D33 !important;
 }
-.theme-botanical .text-[#C2410C] {
-  color: #AA7722 !important;
+.theme-botanical.dark-themed .bg-\[\#EBEAE6\] {
+  background-color: #24332A !important;
 }
-.theme-botanical .border-[#C2410C] {
-  border-color: #AA7722 !important;
+.theme-botanical.dark-themed .text-\[\#1A1A1A\] {
+  color: #D1DDD5 !important;
 }
-.theme-botanical .bg-[#C2410C] {
-  background-color: #AA7722 !important;
+.theme-botanical.dark-themed .text-\[\#C2410C\] {
+  color: #D4AF37 !important; /* Autumn gold accents */
 }
-.theme-botanical .bg-[#C2410C]/5 {
-  background-color: rgba(170, 119, 34, 0.05) !important;
+.theme-botanical.dark-themed .border-\[\#1A1A1A\] {
+  border-color: #2A3C31 !important;
 }
-.theme-botanical .bg-[#C2410C]/20 {
-  background-color: rgba(170, 119, 34, 0.2) !important;
+.theme-botanical.dark-themed .border-b-\[\#1A1A1A\],
+.theme-botanical.dark-themed .border-t-\[\#1A1A1A\],
+.theme-botanical.dark-themed .border-l-\[\#1A1A1A\],
+.theme-botanical.dark-themed .border-r-\[\#1A1A1A\],
+.theme-botanical.dark-themed .border-b,
+.theme-botanical.dark-themed .border-t {
+  border-color: #2A3C31 !important;
+}
+.theme-botanical.dark-themed .border-\[\#1A1A1A\]\/10,
+.theme-botanical.dark-themed .border-\[\#1A1A1A\]\/20,
+.theme-botanical.dark-themed .border-\[\#1A1A1A\]\/30 {
+  border-color: rgba(209, 221, 213, 0.15) !important;
+}
+.theme-botanical.dark-themed .bg-\[\#C2410C\] {
+  background-color: #D4AF37 !important;
+  color: #111A15 !important;
+}
+.theme-botanical.dark-themed .border-\[\#C2410C\] {
+  border-color: #D4AF37 !important;
+}
+.theme-botanical.dark-themed .text-[#C2410C] {
+  color: #D4AF37 !important;
+}
+.theme-botanical.dark-themed .border-[#C2410C] {
+  border-color: #D4AF37 !important;
+}
+.theme-botanical.dark-themed .bg-[#C2410C] {
+  background-color: #D4AF37 !important;
+}
+.theme-botanical.dark-themed .bg-\[\#C2410C\]\/5 {
+  background-color: rgba(212, 175, 55, 0.08) !important;
+}
+.theme-botanical.dark-themed .bg-\[\#C2410C\]\/20 {
+  background-color: rgba(212, 175, 55, 0.25) !important;
+}
+.theme-botanical.dark-themed .bg-red-500\/5 {
+  background-color: rgba(212, 175, 55, 0.05) !important;
+}
+
+/* --- 4. ESPRESSO ACCENT THEME (LATTE & ARABICA) --- */
+.theme-espresso.light-themed {
+  background-color: #F4EFEB !important;
+  color: #2C1F18 !important;
+}
+.theme-espresso.light-themed .bg-\[\#F9F8F6\] {
+  background-color: #EADFD7 !important;
+}
+.theme-espresso.light-themed .bg-\[\#F4F3EF\] {
+  background-color: #DFCFC3 !important;
+}
+.theme-espresso.light-themed .bg-white {
+  background-color: #FAF7F5 !important;
+  color: #2C1F18 !important;
+}
+.theme-espresso.light-themed .bg-\[\#1A1A1A\] {
+  background-color: #4A3A2F !important;
+}
+.theme-espresso.light-themed .bg-\[\#EBEAE6\] {
+  background-color: #DFCFC3 !important;
+}
+.theme-espresso.light-themed .text-\[\#1A1A1A\] {
+  color: #2C1F18 !important;
+}
+.theme-espresso.light-themed .text-\[\#C2410C\] {
+  color: #8E5D38 !important; /* Chestnut Bronze */
+}
+.theme-espresso.light-themed .border-\[\#1A1A1A\] {
+  border-color: #4A3A2F !important;
+}
+.theme-espresso.light-themed .border-b-\[\#1A1A1A\],
+.theme-espresso.light-themed .border-t-\[\#1A1A1A\],
+.theme-espresso.light-themed .border-l-\[\#1A1A1A\],
+.theme-espresso.light-themed .border-r-\[\#1A1A1A\],
+.theme-espresso.light-themed .border-b,
+.theme-espresso.light-themed .border-t {
+  border-color: #4A3A2F !important;
+}
+.theme-espresso.light-themed .border-\[\#1A1A1A\]\/10,
+.theme-espresso.light-themed .border-\[\#1A1A1A\]\/20,
+.theme-espresso.light-themed .border-\[\#1A1A1A\]\/30 {
+  border-color: rgba(74, 58, 47, 0.25) !important;
+}
+.theme-espresso.light-themed .bg-\[\#C2410C\] {
+  background-color: #8E5D38 !important;
+  color: #FFFFFF !important;
+}
+.theme-espresso.light-themed .border-\[\#C2410C\] {
+  border-color: #8E5D38 !important;
+}
+.theme-espresso.light-themed .text-[#C2410C] {
+  color: #8E5D38 !important;
+}
+.theme-espresso.light-themed .border-[#C2410C] {
+  border-color: #8E5D38 !important;
+}
+.theme-espresso.light-themed .bg-[#C2410C] {
+  background-color: #8E5D38 !important;
+}
+.theme-espresso.light-themed .bg-\[\#C2410C\]\/5 {
+  background-color: rgba(142, 93, 56, 0.08) !important;
+}
+.theme-espresso.light-themed .bg-\[\#C2410C\]\/20 {
+  background-color: rgba(142, 93, 56, 0.2) !important;
+}
+.theme-espresso.light-themed .bg-red-500\/5 {
+  background-color: rgba(142, 93, 56, 0.05) !important;
+}
+
+/* Espresso Dark Mode */
+.theme-espresso.dark-themed {
+  background-color: #130E0B !important;
+  color: #E6DFDA !important;
+}
+.theme-espresso.dark-themed .bg-\[\#F9F8F6\] {
+  background-color: #1D1612 !important;
+}
+.theme-espresso.dark-themed .bg-\[\#F4F3EF\] {
+  background-color: #2A1F1B !important;
+}
+.theme-espresso.dark-themed .bg-white {
+  background-color: #1D1612 !important;
+  color: #E6DFDA !important;
+}
+.theme-espresso.dark-themed .bg-\[\#1A1A1A\] {
+  background-color: #3C2D25 !important;
+}
+.theme-espresso.dark-themed .bg-\[\#EBEAE6\] {
+  background-color: #2C1F1A !important;
+}
+.theme-espresso.dark-themed .text-\[\#1A1A1A\] {
+  color: #E6DFDA !important;
+}
+.theme-espresso.dark-themed .text-\[\#C2410C\] {
+  color: #B58055 !important; /* Sweet Latte Gold */
+}
+.theme-espresso.dark-themed .border-\[\#1A1A1A\] {
+  border-color: #3C2D25 !important;
+}
+.theme-espresso.dark-themed .border-b-\[\#1A1A1A\],
+.theme-espresso.dark-themed .border-t-\[\#1A1A1A\],
+.theme-espresso.dark-themed .border-l-\[\#1A1A1A\],
+.theme-espresso.dark-themed .border-r-\[\#1A1A1A\],
+.theme-espresso.dark-themed .border-b,
+.theme-espresso.dark-themed .border-t {
+  border-color: #3C2D25 !important;
+}
+.theme-espresso.dark-themed .border-\[\#1A1A1A\]\/10,
+.theme-espresso.dark-themed .border-\[\#1A1A1A\]\/20,
+.theme-espresso.dark-themed .border-\[\#1A1A1A\]\/30 {
+  border-color: rgba(230, 223, 218, 0.15) !important;
+}
+.theme-espresso.dark-themed .bg-\[\#C2410C\] {
+  background-color: #B58055 !important;
+  color: #130E0B !important;
+}
+.theme-espresso.dark-themed .border-\[\#C2410C\] {
+  border-color: #B58055 !important;
+}
+.theme-espresso.dark-themed .text-[#C2410C] {
+  color: #B58055 !important;
+}
+.theme-espresso.dark-themed .border-[#C2410C] {
+  border-color: #B58055 !important;
+}
+.theme-espresso.dark-themed .bg-[#C2410C] {
+  background-color: #B58055 !important;
+}
+.theme-espresso.dark-themed .bg-\[\#C2410C\]\/5 {
+  background-color: rgba(181, 128, 85, 0.08) !important;
+}
+.theme-espresso.dark-themed .bg-\[\#C2410C\]\/20 {
+  background-color: rgba(181, 128, 85, 0.25) !important;
+}
+.theme-espresso.dark-themed .bg-red-500\/5 {
+  background-color: rgba(181, 128, 85, 0.05) !important;
 }
 

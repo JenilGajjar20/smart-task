@@ -16,8 +16,9 @@ import TaskList from './components/TaskList';
 import TaskForm from './components/TaskForm';
 import SupportPage from './components/SupportPage';
 import SettingsPage from './components/SettingsPage';
+import GuidePage from './components/GuidePage';
 import { 
-  CheckSquare, LogOut, Plus, Sparkles, RefreshCw, User as UserIcon, BellRing, Settings, CalendarRange, Clock, AlertCircle, X
+  CheckSquare, LogOut, Plus, Sparkles, RefreshCw, User as UserIcon, BellRing, Settings, CalendarRange, Clock, AlertCircle, X, BookOpen
 } from 'lucide-react';
 
 export default function App() {
@@ -40,31 +41,21 @@ export default function App() {
 
   // Active filters and views
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'completed' | 'overdue'>('all');
-  const [currentView, setCurrentView] = useState<'agenda' | 'support' | 'settings'>('agenda');
+  const [currentView, setCurrentView] = useState<'agenda' | 'support' | 'settings' | 'guide'>('agenda');
 
   // Application alert banner
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Active theme state
-  const [theme, setTheme] = useState<string>(() => {
-    return localStorage.getItem('smarttask_theme') || 'editorial';
-  });
+  const [theme, setTheme] = useState<string>('editorial');
 
-  useEffect(() => {
-    const handleSettingsUpdate = () => {
-      const savedTheme = localStorage.getItem('smarttask_theme') || 'editorial';
-      setTheme(savedTheme);
-    };
-    window.addEventListener('smarttask_settings_updated', handleSettingsUpdate);
-    return () => window.removeEventListener('smarttask_settings_updated', handleSettingsUpdate);
-  }, []);
+  // Dark mode state
+  const [darkMode, setDarkMode] = useState<boolean>(false);
 
-  const triggerToast = (message: string, type: 'success' | 'error' = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => {
-      setToast(null);
-    }, 4500);
-  };
+  // Active custom user profile fields
+  const [profileNickname, setProfileNickname] = useState<string>('');
+  const [profileRole, setProfileRole] = useState<string>('Workspace Coordinator');
+  const [profileStation, setProfileStation] = useState<string>('Primary Hub No. 1');
 
   // 1. Listen for auth state changes
   useEffect(() => {
@@ -74,10 +65,125 @@ export default function App() {
       if (!currentUser) {
         setTasks([]);
         setTasksLoaded(false);
+        // Reset properties
+        setTheme('editorial');
+        setDarkMode(false);
+        setProfileNickname('');
+        setProfileRole('Workspace Coordinator');
+        setProfileStation('Primary Hub No. 1');
       }
     });
     return () => unsubscribe();
   }, []);
+
+  // 1b. Load and sync settings for the active user in real-time
+  useEffect(() => {
+    if (!user) return;
+
+    const baseKey = `smarttask_user_${user.uid}`;
+    
+    // Load local cache immediately for zero-lag UI feedback
+    const cachedTheme = localStorage.getItem(`${baseKey}_theme`) || 'editorial';
+    const cachedDarkMode = localStorage.getItem(`${baseKey}_dark_mode`) === 'true';
+    const cachedNickname = localStorage.getItem(`${baseKey}_profile_nickname`) || user.displayName || '';
+    const cachedRole = localStorage.getItem(`${baseKey}_profile_role`) || 'Workspace Coordinator';
+    const cachedStation = localStorage.getItem(`${baseKey}_profile_station`) || 'Primary Hub No. 1';
+
+    setTheme(cachedTheme);
+    setDarkMode(cachedDarkMode);
+    setProfileNickname(cachedNickname);
+    setProfileRole(cachedRole);
+    setProfileStation(cachedStation);
+
+    // Read synced settings securely in real-time from Firestore setting doc
+    const unsubscribe = onSnapshot(
+      doc(db, 'settings', user.uid),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.theme) {
+            setTheme(data.theme);
+            localStorage.setItem(`${baseKey}_theme`, data.theme);
+          }
+          if (data.darkMode !== undefined) {
+            setDarkMode(data.darkMode);
+            localStorage.setItem(`${baseKey}_dark_mode`, String(data.darkMode));
+          }
+          if (data.profileNickname !== undefined) {
+            setProfileNickname(data.profileNickname);
+            localStorage.setItem(`${baseKey}_profile_nickname`, data.profileNickname);
+          }
+          if (data.profileRole !== undefined) {
+            setProfileRole(data.profileRole);
+            localStorage.setItem(`${baseKey}_profile_role`, data.profileRole);
+          }
+          if (data.profileStation !== undefined) {
+            setProfileStation(data.profileStation);
+            localStorage.setItem(`${baseKey}_profile_station`, data.profileStation);
+          }
+        }
+      },
+      (err) => {
+        console.warn('Real-time settings synchronization: offline/skipped.', err);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user]);
+
+  useEffect(() => {
+    const handleSettingsUpdate = () => {
+      if (!user) return;
+      const baseKey = `smarttask_user_${user.uid}`;
+      setTheme(localStorage.getItem(`${baseKey}_theme`) || 'editorial');
+      setDarkMode(localStorage.getItem(`${baseKey}_dark_mode`) === 'true');
+      setProfileNickname(localStorage.getItem(`${baseKey}_profile_nickname`) || '');
+      setProfileRole(localStorage.getItem(`${baseKey}_profile_role`) || 'Workspace Coordinator');
+      setProfileStation(localStorage.getItem(`${baseKey}_profile_station`) || 'Primary Hub No. 1');
+    };
+    window.addEventListener('smarttask_settings_updated', handleSettingsUpdate);
+    return () => window.removeEventListener('smarttask_settings_updated', handleSettingsUpdate);
+  }, [user]);
+
+  // 1c. Support address-able URLs for guide and help
+  useEffect(() => {
+    const handleUrlRouting = () => {
+      const hash = window.location.hash;
+      const path = window.location.pathname;
+      if (hash === '#guide' || hash === '#help' || path === '/guide' || path === '/help') {
+        setCurrentView('guide');
+      } else if (hash === '#support' || path === '/support') {
+        setCurrentView('support');
+      } else if (hash === '#settings' || path === '/settings') {
+        setCurrentView('settings');
+      }
+    };
+    
+    // Run on initial mount
+    handleUrlRouting();
+    
+    // Listen for hash variations
+    window.addEventListener('hashchange', handleUrlRouting);
+    return () => window.removeEventListener('hashchange', handleUrlRouting);
+  }, []);
+
+  // Update hash when currentView changes to preserve browser history/navigation expectations
+  useEffect(() => {
+    if (currentView === 'agenda') {
+      if (window.location.hash) {
+        window.history.pushState(null, '', window.location.pathname + window.location.search);
+      }
+    } else {
+      window.location.hash = currentView;
+    }
+  }, [currentView]);
+
+  const triggerToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 4500);
+  };
 
   // 2. Load tasks in real-time if user is authenticated
   useEffect(() => {
@@ -333,9 +439,9 @@ export default function App() {
 
   if (!authStateLoaded) {
     return (
-      <div className={`theme-${theme} min-h-screen bg-[#F9F8F6] flex flex-col justify-center items-center font-sans transition-colors duration-300`}>
+      <div className={`theme-${theme} ${darkMode ? 'dark-themed' : 'light-themed'} min-h-screen bg-[#F9F8F6] flex flex-col justify-center items-center font-sans transition-colors duration-300`}>
         <RefreshCw className="h-10 w-10 text-[#C2410C] animate-spin mb-4" />
-        <span className="text-[#1A1A1A] text-xs font-bold tracking-[0.2em] uppercase">Syncing Desk Files...</span>
+        <span className="text-[#1A1A1A] text-xs font-bold tracking-[0.2em] uppercase">Syncing Workspace...</span>
       </div>
     );
   }
@@ -360,7 +466,7 @@ export default function App() {
   });
 
   return (
-    <div className={`theme-${theme} min-h-screen bg-[#F9F8F6] text-[#1A1A1A] font-sans selection:bg-[#C2410C]/25 pb-16 transition-colors duration-300`}>
+    <div className={`theme-${theme} ${darkMode ? 'dark-themed' : 'light-themed'} min-h-screen bg-[#F9F8F6] text-[#1A1A1A] font-sans selection:bg-[#C2410C]/25 pb-16 transition-colors duration-300`}>
       {/* Dynamic Alert Banner */}
       <AnimatePresence>
         {toast && (
@@ -398,9 +504,13 @@ export default function App() {
           
           <div className="flex flex-col md:text-right items-start md:items-end gap-2 w-full md:w-auto">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest opacity-60 mb-1">Editor Desk</p>
-              <p className="text-xl font-serif tracking-tight">{user.displayName || 'Contributor'}</p>
-              <p className="text-xs font-mono opacity-50">{user.email}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest opacity-60 mb-1">
+                {profileRole} // {profileStation}
+              </p>
+              <div className="text-xl font-serif tracking-tight flex items-center md:justify-end gap-2">
+                <span>{profileNickname || user.displayName || 'Workspace Contributor'}</span>
+              </div>
+              <p className="text-xs font-mono opacity-50 mt-0.5">{user.email}</p>
             </div>
             
             <div className="flex items-center gap-3 mt-1">
@@ -423,7 +533,7 @@ export default function App() {
                 className="px-2.5 py-1.5 border border-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer"
                 title="Log out of application"
               >
-                Exit Desk
+                Exit Workspace
               </button>
             </div>
           </div>
@@ -452,7 +562,7 @@ export default function App() {
           {!tasksLoaded ? (
             <div className="h-[300px] flex flex-col justify-center items-center bg-[#F9F8F6] border border-[#1A1A1A]">
               <RefreshCw className="h-8 w-8 text-[#C2410C] animate-spin" />
-              <span className="text-[#1A1A1A] text-xs mt-3 uppercase font-bold tracking-widest">Syncing Dispatch Desk Records...</span>
+              <span className="text-[#1A1A1A] text-xs mt-3 uppercase font-bold tracking-widest">Syncing Dispatch Workspace Records...</span>
             </div>
           ) : currentView === 'support' ? (
             <SupportPage 
@@ -467,8 +577,33 @@ export default function App() {
               tasks={tasks}
               user={user}
             />
+          ) : currentView === 'guide' ? (
+            <GuidePage 
+              onBack={() => setCurrentView('agenda')} 
+              triggerToast={triggerToast} 
+              user={user}
+            />
           ) : (
             <div className="space-y-8">
+              {/* Orientation Manual Greeting Banner */}
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white border border-[#1A1A1A] p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+              >
+                <div className="space-y-1">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-[#C2410C] font-mono">// Orientation Manual</span>
+                  <p className="text-xs text-slate-600 font-serif leading-relaxed">
+                    Personalizing your checklist? Learn how headers, roles, and <strong className="text-[#1A1A1A]">Workspace Hubs</strong> sync elegantly for both tech and daily life.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setCurrentView('guide')}
+                  className="shrink-0 border border-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 font-sans"
+                >
+                  <BookOpen className="h-3.5 w-3.5" /> View Guide & Presets
+                </button>
+              </motion.div>
               {/* Dashboard counters */}
               <Dashboard 
                 tasks={tasks} 
@@ -523,6 +658,12 @@ export default function App() {
           <span>Encrypted dispatch channel workspace</span>
           <div className="flex gap-4">
             <span 
+              className={`hover:underline cursor-pointer transition-colors ${currentView === 'guide' ? 'text-[#C2410C] underline font-bold' : ''}`}
+              onClick={() => setCurrentView('guide')}
+            >
+              Guide
+            </span>
+            <span 
               className={`hover:underline cursor-pointer transition-colors ${currentView === 'support' ? 'text-[#C2410C] underline font-bold' : ''}`}
               onClick={() => setCurrentView('support')}
             >
@@ -534,7 +675,7 @@ export default function App() {
             >
               Settings
             </span>
-            <span className="hover:underline cursor-pointer" onClick={handleSignOut}>Exit Desk</span>
+            <span className="hover:underline cursor-pointer" onClick={handleSignOut}>Exit Workspace</span>
           </div>
         </footer>
       </div>

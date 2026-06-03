@@ -38,7 +38,7 @@ export default function SupportPage({ onBack, triggerToast, userEmail }: Support
       a: 'When you file a recurring task, completing it immediately registers a new instance calculated from the previous deadline. Daily, Weekly, Monthly, or Custom intervals can be scheduled.',
     },
     {
-      q: 'Where are my desk records stored?',
+      q: 'Where are my workspace records stored?',
       a: 'Your checklist is safely synchronized with a secure Cloud Firestore database linked directly to your secure SmartTask workspace coordinates.',
     },
     {
@@ -47,7 +47,7 @@ export default function SupportPage({ onBack, triggerToast, userEmail }: Support
     },
     {
       q: 'How do I edit existing categories or labels?',
-      a: 'Categories are standard desk divisions (Work, Personal, Education, Health, Shopping, Finance). You can classify any assignment during composition or when editing details.',
+      a: 'Categories are standard workspace divisions (Work, Personal, Education, Health, Shopping, Finance). You can classify any assignment during composition or when editing details.',
     },
   ];
 
@@ -66,7 +66,7 @@ export default function SupportPage({ onBack, triggerToast, userEmail }: Support
           <h2 className="font-serif italic text-4xl text-[#1A1A1A]">Editorial Correspondence</h2>
         </div>
         <span className="text-[10px] uppercase font-bold tracking-widest opacity-40 font-mono hidden md:inline">
-          // Dispatch Support Desk
+          // Workspace Support Panel
         </span>
       </div>
 
@@ -128,7 +128,7 @@ export default function SupportPage({ onBack, triggerToast, userEmail }: Support
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Recurrence bug, Feature suggestion, Desk configuration assistance"
+                  placeholder="e.g. Recurrence bug, Feature suggestion, Workspace configuration assistance"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   className="w-full px-3 py-2 bg-white border border-[#1A1A1A] rounded-none outline-none focus:ring-1 focus:ring-[#C2410C] text-[#1A1A1A] text-xs font-serif"
@@ -194,10 +194,10 @@ export default function SupportPage({ onBack, triggerToast, userEmail }: Support
             </div>
           </div>
 
-          {/* Quick Desk Guide bulletin */}
+          {/* Quick Guidance bulletin */}
           <div className="border border-[#1A1A1A]/30 bg-white p-5 space-y-3">
             <h4 className="text-xs uppercase font-bold tracking-widest font-mono flex items-center gap-2">
-              <BookOpen className="h-3.5 w-3.5 text-[#1A1A1A]/60" /> Quick Desk Instructions
+              <BookOpen className="h-3.5 w-3.5 text-[#1A1A1A]/60" /> Quick Workspace Instructions
             </h4>
             <div className="text-[11px] font-serif pr-2 text-slate-600 leading-relaxed space-y-2">
               <p>
