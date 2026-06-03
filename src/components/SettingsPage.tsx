@@ -12,6 +12,9 @@ interface SettingsPageProps {
 
 export default function SettingsPage({ onBack, triggerToast, tasks, user }: SettingsPageProps) {
   // Read existing preferences from localStorage or set defaults
+  const [theme, setTheme] = useState<string>(() => {
+    return localStorage.getItem('smarttask_theme') || 'editorial';
+  });
   const [defaultCategory, setDefaultCategory] = useState<string>(() => {
     return localStorage.getItem('smarttask_default_category') || 'Work';
   });
@@ -34,6 +37,7 @@ export default function SettingsPage({ onBack, triggerToast, tasks, user }: Sett
 
   // Save Settings handler
   const handleSaveSettings = () => {
+    localStorage.setItem('smarttask_theme', theme);
     localStorage.setItem('smarttask_default_category', defaultCategory);
     localStorage.setItem('smarttask_default_priority', defaultPriority);
     localStorage.setItem('smarttask_time_format', timeFormat);
@@ -145,6 +149,24 @@ export default function SettingsPage({ onBack, triggerToast, tasks, user }: Sett
                   24-Hour
                 </button>
               </div>
+            </div>
+
+            {/* Global Desk Theme Selection */}
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 py-2 border-b border-[#1A1A1A]/10">
+              <div>
+                <span className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wider block">Global Desk Theme</span>
+                <span className="text-[10px] text-slate-500 font-serif">Choose an aesthetic language and typography styling system.</span>
+              </div>
+              <select
+                id="desk-theme-select"
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
+                className="px-3 py-1.5 bg-white border border-[#1A1A1A] rounded-none outline-none text-[#1A1A1A] text-xs font-serif transition-colors cursor-pointer min-w-[150px] sm:min-w-[200px]"
+              >
+                <option value="editorial">Editorial Aesthetic (Ivory & Terracotta)</option>
+                <option value="cosmic">Midnight Cosmic (Indigo Glow Dark Mode)</option>
+                <option value="botanical">Forest Botanical (Sage Greens & Gold)</option>
+              </select>
             </div>
 
             {/* Default Category Setting */}
@@ -272,10 +294,15 @@ export default function SettingsPage({ onBack, triggerToast, tasks, user }: Sett
                   localStorage.removeItem('smarttask_default_priority');
                   localStorage.removeItem('smarttask_time_format');
                   localStorage.removeItem('smarttask_desk_sounds');
+                  localStorage.removeItem('smarttask_theme');
                   setDefaultCategory('Work');
                   setDefaultPriority('medium');
                   setTimeFormat('24h');
                   setDeskSounds(true);
+                  setTheme('editorial');
+                  
+                  // Instantly update layout
+                  window.dispatchEvent(new Event('smarttask_settings_updated'));
                   triggerToast('Client desk preference flags reset successfully.');
                 }
               }}

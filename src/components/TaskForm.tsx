@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { X, Calendar, Flag, Tag, Sparkles, Clock } from 'lucide-react';
+import { X, Calendar, Flag, Tag, Sparkles, Clock, Folder } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import { Task, Priority, Category, RecurrenceFrequency, RecurrenceUnit, RecurrenceSettings } from '../types';
 
 interface TaskFormProps {
   taskToEdit?: Task | null;
+  existingProjects?: string[];
   onSave: (data: {
     title: string;
     description: string | undefined;
@@ -14,13 +15,15 @@ interface TaskFormProps {
     dueDate: Timestamp;
     reminderTime: Timestamp | null;
     recurrence?: RecurrenceSettings | null;
+    project?: string | null;
   }) => Promise<void>;
   onClose: () => void;
 }
 
-export default function TaskForm({ taskToEdit, onSave, onClose }: TaskFormProps) {
+export default function TaskForm({ taskToEdit, existingProjects = [], onSave, onClose }: TaskFormProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [project, setProject] = useState('');
   const [priority, setPriority] = useState<Priority>(() => {
     return (localStorage.getItem('smarttask_default_priority') as Priority) || 'medium';
   });
@@ -61,6 +64,7 @@ export default function TaskForm({ taskToEdit, onSave, onClose }: TaskFormProps)
       setDescription(taskToEdit.description || '');
       setPriority(taskToEdit.priority);
       setCategory(taskToEdit.category);
+      setProject(taskToEdit.project || '');
       setDueDateStr(formatDateToInput(taskToEdit.dueDate.toDate()));
       if (taskToEdit.reminderTime) {
         setReminderActive(true);
@@ -81,6 +85,7 @@ export default function TaskForm({ taskToEdit, onSave, onClose }: TaskFormProps)
     } else {
       setTitle('');
       setDescription('');
+      setProject('');
       setPriority((localStorage.getItem('smarttask_default_priority') as Priority) || 'medium');
       setCategory((localStorage.getItem('smarttask_default_category') as Category) || 'Work');
       setDueDateStr(getInitialDueDate());
@@ -139,6 +144,7 @@ export default function TaskForm({ taskToEdit, onSave, onClose }: TaskFormProps)
         dueDate: dueDateTimestamp,
         reminderTime: reminderTimeTimestamp,
         recurrence: recurrencePayload,
+        project: project.trim() || null,
       });
       onClose();
     } catch (err: any) {
@@ -210,7 +216,7 @@ export default function TaskForm({ taskToEdit, onSave, onClose }: TaskFormProps)
 
             {/* Description */}
             <div>
-              <label className="block text-[10px] font-bold text-[#1A1A1A] uppercase tracking-[0.15em] mb-1.5">Description (Optional)</label>
+              <label className="block text-[10px] font-bold text-[#1A1A1A] uppercase tracking-[0.15em] mb-1.5 font-sans">Description (Optional)</label>
               <textarea
                 placeholder="Include agenda details, milestones, reference links..."
                 value={description}
@@ -219,6 +225,33 @@ export default function TaskForm({ taskToEdit, onSave, onClose }: TaskFormProps)
                 maxLength={1000}
                 className="w-full px-4 py-3 bg-white border border-[#1A1A1A] rounded-none outline-none focus:ring-1 focus:ring-[#C2410C] text-[#1A1A1A] text-sm font-serif resize-none"
               />
+            </div>
+
+            {/* Project */}
+            <div>
+              <label className="block text-[10px] font-bold text-[#1A1A1A] uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1.5 font-sans">
+                <Folder className="h-3.5 w-3.5 text-[#C2410C]" /> Project / Section (Optional)
+              </label>
+              <input
+                id="task-project-input"
+                type="text"
+                list="existing-projects"
+                placeholder="e.g. Summer Release, Home Renovation"
+                value={project}
+                onChange={(e) => setProject(e.target.value)}
+                maxLength={100}
+                className="w-full px-4 py-3 bg-white border border-[#1A1A1A] rounded-none outline-none focus:ring-1 focus:ring-[#C2410C] text-[#1A1A1A] text-sm font-serif"
+              />
+              {existingProjects && existingProjects.length > 0 && (
+                <datalist id="existing-projects">
+                  {existingProjects.map((p) => (
+                    <option key={p} value={p} />
+                  ))}
+                </datalist>
+              )}
+              <span className="text-[9px] text-slate-500 font-serif italic mt-1 block leading-normal">
+                Assign to an existing workspace book or create a new section inline by typing.
+              </span>
             </div>
 
             {/* Category and Priority (Two column grid) */}

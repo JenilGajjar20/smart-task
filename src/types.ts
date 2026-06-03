@@ -24,6 +24,7 @@ export interface Task {
   dueDate: Timestamp;
   reminderTime?: Timestamp | null;
   recurrence?: RecurrenceSettings | null;
+  project?: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

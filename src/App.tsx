@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   auth, db, logoutUser, handleFirestoreError 
@@ -26,6 +26,14 @@ export default function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [tasksLoaded, setTasksLoaded] = useState(false);
 
+  // Computed helper for unique database projects
+  const existingProjects = useMemo(() => {
+    const list = tasks
+      .map(t => t.project)
+      .filter((p): p is string => typeof p === 'string' && p.trim() !== '');
+    return Array.from(new Set(list)).sort();
+  }, [tasks]);
+
   // Modal form states
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
@@ -36,6 +44,20 @@ export default function App() {
 
   // Application alert banner
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Active theme state
+  const [theme, setTheme] = useState<string>(() => {
+    return localStorage.getItem('smarttask_theme') || 'editorial';
+  });
+
+  useEffect(() => {
+    const handleSettingsUpdate = () => {
+      const savedTheme = localStorage.getItem('smarttask_theme') || 'editorial';
+      setTheme(savedTheme);
+    };
+    window.addEventListener('smarttask_settings_updated', handleSettingsUpdate);
+    return () => window.removeEventListener('smarttask_settings_updated', handleSettingsUpdate);
+  }, []);
 
   const triggerToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -85,6 +107,7 @@ export default function App() {
             dueDate: data.dueDate,
             reminderTime: data.reminderTime,
             recurrence: data.recurrence || null,
+            project: data.project || null,
             createdAt: data.createdAt,
             updatedAt: data.updatedAt,
           });
@@ -120,6 +143,7 @@ export default function App() {
     dueDate: Timestamp;
     reminderTime: Timestamp | null;
     recurrence?: RecurrenceSettings | null;
+    project?: string | null;
   }) => {
     if (!user) return;
 
@@ -148,6 +172,9 @@ export default function App() {
         if (data.recurrence !== undefined) {
           updatePayload.recurrence = data.recurrence;
         }
+        if (data.project !== undefined) {
+          updatePayload.project = data.project;
+        }
 
         await updateDoc(docRef, updatePayload);
         triggerToast('Task document successfully updated.');
@@ -173,6 +200,9 @@ export default function App() {
         }
         if (data.recurrence !== undefined) {
           createPayload.recurrence = data.recurrence;
+        }
+        if (data.project !== undefined) {
+          createPayload.project = data.project;
         }
 
         await addDoc(collRef, createPayload);
@@ -213,6 +243,9 @@ export default function App() {
       }
       if (task.recurrence !== undefined && task.recurrence !== null) {
         payload.recurrence = task.recurrence;
+      }
+      if (task.project !== undefined && task.project !== null) {
+        payload.project = task.project;
       }
 
       await updateDoc(docRef, payload);
@@ -267,6 +300,9 @@ export default function App() {
         if (nextReminder !== null) {
           nextTaskPayload.reminderTime = nextReminder;
         }
+        if (task.project !== undefined && task.project !== null) {
+          nextTaskPayload.project = task.project;
+        }
 
         await addDoc(collRef, nextTaskPayload);
         triggerToast('Task completed! Custom next scheduled instance created.');
@@ -297,7 +333,7 @@ export default function App() {
 
   if (!authStateLoaded) {
     return (
-      <div className="min-h-screen bg-[#F9F8F6] flex flex-col justify-center items-center font-sans">
+      <div className={`theme-${theme} min-h-screen bg-[#F9F8F6] flex flex-col justify-center items-center font-sans transition-colors duration-300`}>
         <RefreshCw className="h-10 w-10 text-[#C2410C] animate-spin mb-4" />
         <span className="text-[#1A1A1A] text-xs font-bold tracking-[0.2em] uppercase">Syncing Desk Files...</span>
       </div>
@@ -324,7 +360,7 @@ export default function App() {
   });
 
   return (
-    <div className="min-h-screen bg-[#F9F8F6] text-[#1A1A1A] font-sans selection:bg-[#C2410C]/25 pb-16">
+    <div className={`theme-${theme} min-h-screen bg-[#F9F8F6] text-[#1A1A1A] font-sans selection:bg-[#C2410C]/25 pb-16 transition-colors duration-300`}>
       {/* Dynamic Alert Banner */}
       <AnimatePresence>
         {toast && (
@@ -508,6 +544,7 @@ export default function App() {
         {isFormOpen && (
           <TaskForm
             taskToEdit={taskToEdit}
+            existingProjects={existingProjects}
             onSave={handleSaveTask}
             onClose={() => {
               setIsFormOpen(false);

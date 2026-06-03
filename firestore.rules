@@ -31,7 +31,7 @@ service cloud.firestore {
     // --- Task entity validation ---
     function isValidTask(task) {
       return task.keys().hasAll(['userId', 'title', 'priority', 'category', 'completed', 'dueDate', 'createdAt', 'updatedAt']) &&
-             task.keys().size() >= 8 && task.keys().size() <= 11 &&
+             task.keys().size() >= 8 && task.keys().size() <= 12 &&
              task.userId == request.auth.uid &&
              task.title is string && task.title.size() >= 1 && task.title.size() <= 100 &&
              task.priority is string && (task.priority == 'low' || task.priority == 'medium' || task.priority == 'high') &&
@@ -41,6 +41,7 @@ service cloud.firestore {
              task.createdAt is timestamp &&
              task.updatedAt is timestamp &&
              (!task.keys().hasAll(['description']) || (task.description is string && task.description.size() <= 1000)) &&
+             (!task.keys().hasAll(['project']) || (task.project == null || (task.project is string && task.project.size() <= 100))) &&
              (!task.keys().hasAll(['reminderTime']) || task.reminderTime is timestamp) &&
              (!task.keys().hasAll(['recurrence']) || (
                task.recurrence == null || (

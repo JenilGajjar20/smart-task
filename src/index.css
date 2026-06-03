@@ -26,3 +26,281 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* ==========================================================================
+   THEME STYLING CONFIGURATIONS
+   ========================================================================== */
+
+/* --- 1. MIDNIGHT COSMIC (CYBERPUNK INDIGO DARK THEME) --- */
+.theme-cosmic {
+  background-color: #0A0E17 !important;
+  color: #ECEFF4 !important;
+}
+
+.theme-cosmic.min-h-screen {
+  background-color: #0A0E17 !important;
+}
+
+/* Background class overrides */
+.theme-cosmic .bg-\[\#F9F8F6\] {
+  background-color: #121826 !important;
+}
+.theme-cosmic .bg-\[\#F4F3EF\] {
+  background-color: #1A2333 !important;
+}
+.theme-cosmic .bg-white {
+  background-color: #121826 !important;
+  color: #ECEFF4 !important;
+}
+.theme-cosmic .bg-\[\#1A1A1A\] {
+  background-color: #242F41 !important;
+}
+.theme-cosmic .bg-\[\#EBEAE6\] {
+  background-color: #1E293B !important;
+}
+
+/* Text overrides */
+.theme-cosmic .text-\[\#1A1A1A\] {
+  color: #ECEFF4 !important;
+}
+.theme-cosmic .text-\[\#C2410C\] {
+  color: #818CF8 !important; /* Indigo glow */
+}
+.theme-cosmic .text-\[\#666\] {
+  color: #94A3B8 !important; /* Muted Slate */
+}
+.theme-cosmic .text-slate-500,
+.theme-cosmic .text-slate-600 {
+  color: #94A3B8 !important;
+}
+.theme-cosmic .text-slate-700 {
+  color: #CBD5E1 !important;
+}
+
+/* Border overrides */
+.theme-cosmic .border-\[\#1A1A1A\] {
+  border-color: #334155 !important;
+}
+.theme-cosmic .border-b-\[\#1A1A1A\],
+.theme-cosmic .border-t-\[\#1A1A1A\],
+.theme-cosmic .border-l-\[\#1A1A1A\],
+.theme-cosmic .border-r-\[\#1A1A1A\] {
+  border-color: #334155 !important;
+}
+.theme-cosmic .border-b,
+.theme-cosmic .border-t {
+  border-color: #334155 !important;
+}
+.theme-cosmic .border-\[\#1A1A1A\]\/10,
+.theme-cosmic .border-\[\#1A1A1A\]\/20,
+.theme-cosmic .border-\[\#1A1A1A\]\/30 {
+  border-color: rgba(71, 85, 105, 0.45) !important;
+}
+.theme-cosmic .border-\[\#C2410C\] {
+  border-color: #6366F1 !important;
+}
+
+/* Specific component accent elements */
+.theme-cosmic .bg-\[\#C2410C\] {
+  background-color: #6366F1 !important;
+  color: #FFFFFF !important;
+}
+.theme-cosmic .bg-\[\#C2410C\]\/5 {
+  background-color: rgba(99, 102, 241, 0.08) !important;
+}
+.theme-cosmic .bg-\[\#C2410C\]\/20 {
+  background-color: rgba(99, 102, 241, 0.25) !important;
+}
+.theme-cosmic .hover\:bg-\[\#1A1A1A\]:hover {
+  background-color: #4F46E5 !important;
+  color: #FFFFFF !important;
+}
+.theme-cosmic .border-red-500\/30 {
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+.theme-cosmic .bg-red-500\/5 {
+  background-color: rgba(239, 68, 68, 0.05) !important;
+}
+.theme-cosmic .hover\:bg-\[\#C2410C\]:hover {
+  background-color: #6366F1 !important;
+  color: #FFFFFF !important;
+  border-color: #6366F1 !important;
+}
+
+/* Input, select and active typography rules in Cosmic */
+.theme-cosmic select,
+.theme-cosmic input,
+.theme-cosmic textarea {
+  background-color: #121826 !important;
+  color: #ECEFF4 !important;
+  border-color: #334155 !important;
+}
+.theme-cosmic select option {
+  background-color: #121826 !important;
+  color: #ECEFF4 !important;
+}
+.theme-cosmic .text-amber-800 {
+  color: #C084FC !important;
+}
+.theme-cosmic .text-yellow-800 {
+  color: #FB5200 !important;
+}
+.theme-cosmic .text-emerald-800 {
+  color: #34D399 !important;
+}
+.theme-cosmic .text-teal-800 {
+  color: #2DD4BF !important;
+}
+.theme-cosmic h1, 
+.theme-cosmic h2, 
+.theme-cosmic h3, 
+.theme-cosmic h4 {
+  font-family: var(--font-sans) !important;
+  letter-spacing: -0.015em !important;
+}
+.theme-cosmic p,
+.theme-cosmic span,
+.theme-cosmic label {
+  font-family: var(--font-sans) !important;
+}
+.theme-cosmic .font-serif {
+  font-family: var(--font-sans) !important;
+  font-style: normal !important;
+}
+.theme-cosmic .italic {
+  font-style: italic !important;
+}
+
+/* --- 2. FOREST BOTANICAL (WARM ORGANIC SAGE & GOLD THEME) --- */
+.theme-botanical {
+  background-color: #EBF0EC !important;
+  color: #1E2D24 !important;
+}
+
+.theme-botanical.min-h-screen {
+  background-color: #EBF0EC !important;
+}
+
+/* Background class overrides */
+.theme-botanical .bg-\[\#F9F8F6\] {
+  background-color: #E2EAE4 !important;
+}
+.theme-botanical .bg-\[\#F4F3EF\] {
+  background-color: #D3DDD5 !important;
+}
+.theme-botanical .bg-white {
+  background-color: #EDF3EF !important;
+  color: #1E2D24 !important;
+}
+.theme-botanical .bg-\[\#1A1A1A\] {
+  background-color: #344B3D !important;
+}
+.theme-botanical .bg-\[\#EBEAE6\] {
+  background-color: #C1CDC4 !important;
+}
+
+/* Text overrides */
+.theme-botanical .text-\[\#1A1A1A\] {
+  color: #1E2D24 !important;
+}
+.theme-botanical .text-\[\#C2410C\] {
+  color: #AA7722 !important; /* Sage forest Amber/gold */
+}
+.theme-botanical .text-\[\#666\] {
+  color: #556E5D !important; /* Muted botanical spruce */
+}
+.theme-botanical .text-slate-500,
+.theme-botanical .text-slate-600 {
+  color: #556E5D !important;
+}
+.theme-botanical .text-slate-700 {
+  color: #1E2D24 !important;
+}
+
+/* Border overrides */
+.theme-botanical .border-\[\#1A1A1A\] {
+  border-color: #344B3D !important;
+}
+.theme-botanical .border-b-\[\#1A1A1A\],
+.theme-botanical .border-t-\[\#1A1A1A\],
+.theme-botanical .border-l-\[\#1A1A1A\],
+.theme-botanical .border-r-\[\#1A1A1A\] {
+  border-color: #344B3D !important;
+}
+.theme-botanical .border-b,
+.theme-botanical .border-t {
+  border-color: #344B3D !important;
+}
+.theme-botanical .border-\[\#1A1A1A\]\/10,
+.theme-botanical .border-\[\#1A1A1A\]\/20,
+.theme-botanical .border-\[\#1A1A1A\]\/30 {
+  border-color: rgba(52, 75, 61, 0.35) !important;
+}
+.theme-botanical .border-\[\#C2410C\] {
+  border-color: #AA7722 !important;
+}
+
+/* Specific component accent elements */
+.theme-botanical .bg-\[\#C2410C\] {
+  background-color: #AA7722 !important;
+  color: #FFFFFF !important;
+}
+.theme-botanical .bg-\[\#C2410C\]\/5 {
+  background-color: rgba(170, 119, 34, 0.08) !important;
+}
+.theme-botanical .bg-\[\#C2410C\]\/20 {
+  background-color: rgba(170, 119, 34, 0.25) !important;
+}
+.theme-botanical .hover\:bg-\[\#1A1A1A\]:hover {
+  background-color: #23342A !important;
+  color: #FFFFFF !important;
+}
+.theme-botanical .border-red-500\/30 {
+  border-color: rgba(170, 119, 34, 0.3) !important;
+}
+.theme-botanical .bg-red-500\/5 {
+  background-color: rgba(170, 119, 34, 0.05) !important;
+}
+.theme-botanical .hover\:bg-\[\#C2410C\]:hover {
+  background-color: #AA7722 !important;
+  color: #FFFFFF !important;
+  border-color: #AA7722 !important;
+}
+
+/* Inputs, layout and select boxes in Botanical */
+.theme-botanical select,
+.theme-botanical input,
+.theme-botanical textarea {
+  background-color: #EDF3EF !important;
+  color: #1E2D24 !important;
+  border-color: #344B3D !important;
+}
+.theme-botanical select option {
+  background-color: #EDF3EF !important;
+  color: #1E2D24 !important;
+}
+.theme-botanical .text-amber-800 {
+  color: #AA7722 !important;
+}
+.theme-botanical .text-yellow-800 {
+  color: #925D00 !important;
+}
+.theme-botanical .text-emerald-800 {
+  color: #166534 !important;
+}
+.theme-botanical .text-[#C2410C] {
+  color: #AA7722 !important;
+}
+.theme-botanical .border-[#C2410C] {
+  border-color: #AA7722 !important;
+}
+.theme-botanical .bg-[#C2410C] {
+  background-color: #AA7722 !important;
+}
+.theme-botanical .bg-[#C2410C]/5 {
+  background-color: rgba(170, 119, 34, 0.05) !important;
+}
+.theme-botanical .bg-[#C2410C]/20 {
+  background-color: rgba(170, 119, 34, 0.2) !important;
+}
+

@@ -68,6 +68,10 @@
           "type": "string",
           "format": "date-time",
           "description": "ISO timestamp of last task update."
+        },
+        "project": {
+          "type": "string",
+          "description": "Optional custom project categorization name. Max 100 characters."
         }
       },
       "required": ["userId", "title", "priority", "category", "completed", "dueDate", "createdAt", "updatedAt"]
