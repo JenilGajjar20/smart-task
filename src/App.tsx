@@ -720,7 +720,7 @@ export default function App() {
                 <div className="flex flex-col sm:flex-row justify-between items-baseline border-b border-[#1A1A1A] pb-4 gap-4">
                   <div className="flex items-baseline gap-2">
                     <h3 className="font-serif italic text-4xl text-[#1A1A1A]">
-                      {activeTab === 'all' ? 'The Agenda' : `${activeTab} Assignments`}
+                      {activeTab === 'all' ? 'The Agenda' : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Assignments`}
                     </h3>
                     <span className="text-[10px] uppercase font-bold tracking-widest opacity-40 italic">
                       // Sorted by Priority
