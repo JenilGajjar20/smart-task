@@ -41,6 +41,24 @@
           "format": "date-time",
           "description": "ISO timestamp for an optional set reminder alert."
         },
+        "recurrence": {
+          "type": "object",
+          "description": "Recurrence settings for repeating tasks.",
+          "properties": {
+            "frequency": {
+              "type": "string",
+              "enum": ["none", "daily", "weekly", "monthly", "custom"]
+            },
+            "interval": {
+              "type": "number"
+            },
+            "unit": {
+              "type": "string",
+              "enum": ["days", "weeks", "months"]
+            }
+          },
+          "required": ["frequency"]
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",

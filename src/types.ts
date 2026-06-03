@@ -4,6 +4,15 @@ export type Priority = 'low' | 'medium' | 'high';
 
 export type Category = 'Work' | 'Personal' | 'Education' | 'Health' | 'Shopping' | 'Finance' | 'Other';
 
+export type RecurrenceFrequency = 'none' | 'daily' | 'weekly' | 'monthly' | 'custom';
+export type RecurrenceUnit = 'days' | 'weeks' | 'months';
+
+export interface RecurrenceSettings {
+  frequency: RecurrenceFrequency;
+  interval?: number;
+  unit?: RecurrenceUnit;
+}
+
 export interface Task {
   id: string; // Document ID
   userId: string;
@@ -14,6 +23,7 @@ export interface Task {
   completed: boolean;
   dueDate: Timestamp;
   reminderTime?: Timestamp | null;
+  recurrence?: RecurrenceSettings | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

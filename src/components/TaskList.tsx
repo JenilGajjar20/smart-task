@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Briefcase, User, GraduationCap, HeartPulse, ShoppingBag, 
   Coins, Folder, Trash2, Edit3, Search, CalendarDays, 
-  Bell, ArrowUpDown, SlidersHorizontal, AlertCircle
+  Bell, ArrowUpDown, SlidersHorizontal, AlertCircle, RefreshCw
 } from 'lucide-react';
 import { Task, Priority, Category } from '../types';
 
@@ -26,6 +26,18 @@ export default function TaskList({
   const [selectedPriority, setSelectedPriority] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'dueDateAsc' | 'dueDateDesc' | 'priorityDesc' | 'createdAtDesc'>('dueDateAsc');
+
+  const [timeFormat, setTimeFormat] = useState<'12h' | '24h'>(() => {
+    return (localStorage.getItem('smarttask_time_format') as '12h' | '24h') || '24h';
+  });
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setTimeFormat((localStorage.getItem('smarttask_time_format') as '12h' | '24h') || '24h');
+    };
+    window.addEventListener('smarttask_settings_updated', handleUpdate);
+    return () => window.removeEventListener('smarttask_settings_updated', handleUpdate);
+  }, []);
 
   // Category Icon Resolver
   const getCategoryIcon = (category: Category) => {
@@ -54,7 +66,7 @@ export default function TaskList({
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      hour12: false
+      hour12: timeFormat === '12h'
     });
   };
 
@@ -286,6 +298,20 @@ export default function TaskList({
                           <div className="flex items-center gap-1.5 text-[#C2410C] shrink-0 font-bold">
                             <Bell className="h-3.5 w-3.5 animate-bounce" />
                             <span>Alert: {formatDate(task.reminderTime.toDate())}</span>
+                          </div>
+                        )}
+
+                        {/* Recurrence Pattern */}
+                        {task.recurrence && task.recurrence.frequency !== 'none' && (
+                          <div className="flex items-center gap-1.5 text-amber-800 shrink-0 font-bold">
+                            <RefreshCw className="h-3.5 w-3.5 animate-spin" style={{ animationDuration: '6s' }} />
+                            <span>
+                              Repeats: {
+                                task.recurrence.frequency === 'custom' 
+                                  ? `${task.recurrence.interval} ${task.recurrence.unit}` 
+                                  : task.recurrence.frequency
+                              }
+                            </span>
                           </div>
                         )}
                       </div>

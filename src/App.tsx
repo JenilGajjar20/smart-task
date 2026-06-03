@@ -9,11 +9,13 @@ import {
 import { 
   collection, query, where, addDoc, updateDoc, doc, deleteDoc, onSnapshot, serverTimestamp, getDocs, Timestamp 
 } from 'firebase/firestore';
-import { Task, Priority, Category, OperationType } from './types';
+import { Task, Priority, Category, OperationType, RecurrenceSettings } from './types';
 import AuthPage from './components/AuthPage';
 import Dashboard from './components/Dashboard';
 import TaskList from './components/TaskList';
 import TaskForm from './components/TaskForm';
+import SupportPage from './components/SupportPage';
+import SettingsPage from './components/SettingsPage';
 import { 
   CheckSquare, LogOut, Plus, Sparkles, RefreshCw, User as UserIcon, BellRing, Settings, CalendarRange, Clock, AlertCircle, X
 } from 'lucide-react';
@@ -30,6 +32,7 @@ export default function App() {
 
   // Active filters and views
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'completed' | 'overdue'>('all');
+  const [currentView, setCurrentView] = useState<'agenda' | 'support' | 'settings'>('agenda');
 
   // Application alert banner
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -81,6 +84,7 @@ export default function App() {
             completed: data.completed,
             dueDate: data.dueDate,
             reminderTime: data.reminderTime,
+            recurrence: data.recurrence || null,
             createdAt: data.createdAt,
             updatedAt: data.updatedAt,
           });
@@ -115,6 +119,7 @@ export default function App() {
     category: Category;
     dueDate: Timestamp;
     reminderTime: Timestamp | null;
+    recurrence?: RecurrenceSettings | null;
   }) => {
     if (!user) return;
 
@@ -140,6 +145,9 @@ export default function App() {
         if (data.reminderTime !== null) {
           updatePayload.reminderTime = data.reminderTime;
         }
+        if (data.recurrence !== undefined) {
+          updatePayload.recurrence = data.recurrence;
+        }
 
         await updateDoc(docRef, updatePayload);
         triggerToast('Task document successfully updated.');
@@ -163,6 +171,9 @@ export default function App() {
         if (data.reminderTime !== null) {
           createPayload.reminderTime = data.reminderTime;
         }
+        if (data.recurrence !== undefined) {
+          createPayload.recurrence = data.recurrence;
+        }
 
         await addDoc(collRef, createPayload);
         triggerToast('New priority task successfully registered.');
@@ -178,6 +189,8 @@ export default function App() {
   const handleToggleComplete = async (task: Task) => {
     if (!user) return;
     const path = 'tasks';
+    const nextCompletedState = !task.completed;
+    
     try {
       const docRef = doc(db, path, task.id);
       
@@ -186,7 +199,7 @@ export default function App() {
         title: task.title,
         priority: task.priority,
         category: task.category,
-        completed: !task.completed,
+        completed: nextCompletedState,
         dueDate: task.dueDate,
         createdAt: task.createdAt, // retain immutable fields
         updatedAt: serverTimestamp(),
@@ -198,9 +211,68 @@ export default function App() {
       if (task.reminderTime !== undefined && task.reminderTime !== null) {
         payload.reminderTime = task.reminderTime;
       }
+      if (task.recurrence !== undefined && task.recurrence !== null) {
+        payload.recurrence = task.recurrence;
+      }
 
       await updateDoc(docRef, payload);
-      triggerToast(task.completed ? 'Task marked as pending.' : 'Congratulations! Task fully completed.');
+
+      // Auto-create next recurring instance if marking as completed
+      if (nextCompletedState && task.recurrence && task.recurrence.frequency !== 'none') {
+        const currentDue = task.dueDate.toDate();
+        const nextDue = new Date(currentDue);
+        const freq = task.recurrence.frequency;
+
+        if (freq === 'daily') {
+          nextDue.setDate(nextDue.getDate() + 1);
+        } else if (freq === 'weekly') {
+          nextDue.setDate(nextDue.getDate() + 7);
+        } else if (freq === 'monthly') {
+          nextDue.setMonth(nextDue.getMonth() + 1);
+        } else if (freq === 'custom') {
+          const interval = task.recurrence.interval || 1;
+          const unit = task.recurrence.unit || 'days';
+          if (unit === 'days') {
+            nextDue.setDate(nextDue.getDate() + interval);
+          } else if (unit === 'weeks') {
+            nextDue.setDate(nextDue.getDate() + interval * 7);
+          } else if (unit === 'months') {
+            nextDue.setMonth(nextDue.getMonth() + interval);
+          }
+        }
+
+        const timeShiftMs = nextDue.getTime() - currentDue.getTime();
+        let nextReminder: Timestamp | null = null;
+        if (task.reminderTime) {
+          const nextReminderDate = new Date(task.reminderTime.toDate().getTime() + timeShiftMs);
+          nextReminder = Timestamp.fromDate(nextReminderDate);
+        }
+
+        const collRef = collection(db, path);
+        const nextTaskPayload: any = {
+          userId: user.uid,
+          title: task.title,
+          priority: task.priority,
+          category: task.category,
+          completed: false, // next instance starts as incomplete
+          dueDate: Timestamp.fromDate(nextDue),
+          recurrence: task.recurrence, // pass along the recurrence settings for the next instance
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+
+        if (task.description !== undefined) {
+          nextTaskPayload.description = task.description;
+        }
+        if (nextReminder !== null) {
+          nextTaskPayload.reminderTime = nextReminder;
+        }
+
+        await addDoc(collRef, nextTaskPayload);
+        triggerToast('Task completed! Custom next scheduled instance created.');
+      } else {
+        triggerToast(task.completed ? 'Task marked as pending.' : 'Congratulations! Task fully completed.');
+      }
     } catch (error: any) {
       handleFirestoreError(error, OperationType.UPDATE, path);
     }
@@ -283,9 +355,9 @@ export default function App() {
       <div className="max-w-6xl mx-auto px-6 md:px-12 py-12 flex flex-col min-h-screen">
         {/* Global Interactive Header */}
         <header className="flex flex-col md:flex-row justify-between items-baseline border-b border-[#1A1A1A] pb-6 mb-8 gap-4 w-full">
-          <div>
-            <h1 className="text-xs tracking-[0.3em] font-bold uppercase mb-2 text-[#C2410C]">The Daily Standard</h1>
-            <div className="text-6xl md:text-7xl font-serif italic leading-none font-semibold">SmartTask</div>
+          <div onClick={() => setCurrentView('agenda')} className="cursor-pointer select-none group">
+            <h1 className="text-xs tracking-[0.3em] font-bold uppercase mb-2 text-[#C2410C] group-hover:text-[#1A1A1A] transition-colors font-sans">The Daily Standard</h1>
+            <div className="text-6xl md:text-7xl font-serif italic leading-none font-semibold group-hover:opacity-85 transition-opacity">SmartTask</div>
           </div>
           
           <div className="flex flex-col md:text-right items-start md:items-end gap-2 w-full md:w-auto">
@@ -325,7 +397,7 @@ export default function App() {
         <main className="flex-1 space-y-8">
           
           {/* Alerts for reminders of the day */}
-          {todayAlarms.length > 0 && (
+          {currentView === 'agenda' && todayAlarms.length > 0 && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -346,6 +418,19 @@ export default function App() {
               <RefreshCw className="h-8 w-8 text-[#C2410C] animate-spin" />
               <span className="text-[#1A1A1A] text-xs mt-3 uppercase font-bold tracking-widest">Syncing Dispatch Desk Records...</span>
             </div>
+          ) : currentView === 'support' ? (
+            <SupportPage 
+              onBack={() => setCurrentView('agenda')} 
+              triggerToast={triggerToast} 
+              userEmail={user.email || ''} 
+            />
+          ) : currentView === 'settings' ? (
+            <SettingsPage 
+              onBack={() => setCurrentView('agenda')} 
+              triggerToast={triggerToast} 
+              tasks={tasks}
+              user={user}
+            />
           ) : (
             <div className="space-y-8">
               {/* Dashboard counters */}
@@ -401,8 +486,18 @@ export default function App() {
           <span>SmartTask Version 4.02 // Edition {new Date().getFullYear()}</span>
           <span>Encrypted dispatch channel workspace</span>
           <div className="flex gap-4">
-            <span className="hover:underline cursor-pointer">Support</span>
-            <span className="hover:underline cursor-pointer">Settings</span>
+            <span 
+              className={`hover:underline cursor-pointer transition-colors ${currentView === 'support' ? 'text-[#C2410C] underline font-bold' : ''}`}
+              onClick={() => setCurrentView('support')}
+            >
+              Support
+            </span>
+            <span 
+              className={`hover:underline cursor-pointer transition-colors ${currentView === 'settings' ? 'text-[#C2410C] underline font-bold' : ''}`}
+              onClick={() => setCurrentView('settings')}
+            >
+              Settings
+            </span>
             <span className="hover:underline cursor-pointer" onClick={handleSignOut}>Exit Desk</span>
           </div>
         </footer>

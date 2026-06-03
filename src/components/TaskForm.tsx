@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { X, Calendar, Flag, Tag, Sparkles, Clock } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
-import { Task, Priority, Category } from '../types';
+import { Task, Priority, Category, RecurrenceFrequency, RecurrenceUnit, RecurrenceSettings } from '../types';
 
 interface TaskFormProps {
   taskToEdit?: Task | null;
@@ -13,6 +13,7 @@ interface TaskFormProps {
     category: Category;
     dueDate: Timestamp;
     reminderTime: Timestamp | null;
+    recurrence?: RecurrenceSettings | null;
   }) => Promise<void>;
   onClose: () => void;
 }
@@ -20,8 +21,12 @@ interface TaskFormProps {
 export default function TaskForm({ taskToEdit, onSave, onClose }: TaskFormProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState<Priority>('medium');
-  const [category, setCategory] = useState<Category>('Work');
+  const [priority, setPriority] = useState<Priority>(() => {
+    return (localStorage.getItem('smarttask_default_priority') as Priority) || 'medium';
+  });
+  const [category, setCategory] = useState<Category>(() => {
+    return (localStorage.getItem('smarttask_default_category') as Category) || 'Work';
+  });
   
   // Format dates to ISO-like local datetime-local string
   const formatDateToInput = (dateObj?: Date | null): string => {
@@ -42,6 +47,11 @@ export default function TaskForm({ taskToEdit, onSave, onClose }: TaskFormProps)
   const [reminderActive, setReminderActive] = useState(false);
   const [reminderDateStr, setReminderDateStr] = useState('');
 
+  // Recurrence states
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState<RecurrenceFrequency>('none');
+  const [recurrenceInterval, setRecurrenceInterval] = useState<number>(1);
+  const [recurrenceUnit, setRecurrenceUnit] = useState<RecurrenceUnit>('days');
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,6 +69,26 @@ export default function TaskForm({ taskToEdit, onSave, onClose }: TaskFormProps)
         setReminderActive(false);
         setReminderDateStr('');
       }
+      if (taskToEdit.recurrence) {
+        setRecurrenceFrequency(taskToEdit.recurrence.frequency);
+        setRecurrenceInterval(taskToEdit.recurrence.interval || 1);
+        setRecurrenceUnit(taskToEdit.recurrence.unit || 'days');
+      } else {
+        setRecurrenceFrequency('none');
+        setRecurrenceInterval(1);
+        setRecurrenceUnit('days');
+      }
+    } else {
+      setTitle('');
+      setDescription('');
+      setPriority((localStorage.getItem('smarttask_default_priority') as Priority) || 'medium');
+      setCategory((localStorage.getItem('smarttask_default_category') as Category) || 'Work');
+      setDueDateStr(getInitialDueDate());
+      setReminderActive(false);
+      setReminderDateStr('');
+      setRecurrenceFrequency('none');
+      setRecurrenceInterval(1);
+      setRecurrenceUnit('days');
     }
   }, [taskToEdit]);
 
@@ -95,6 +125,12 @@ export default function TaskForm({ taskToEdit, onSave, onClose }: TaskFormProps)
         }
       }
 
+      const recurrencePayload: RecurrenceSettings | null = recurrenceFrequency !== 'none' ? {
+        frequency: recurrenceFrequency,
+        interval: recurrenceFrequency === 'custom' ? Number(recurrenceInterval) || 1 : undefined,
+        unit: recurrenceFrequency === 'custom' ? recurrenceUnit : undefined,
+      } : null;
+
       await onSave({
         title: title.trim(),
         description: description.trim() || undefined,
@@ -102,6 +138,7 @@ export default function TaskForm({ taskToEdit, onSave, onClose }: TaskFormProps)
         category,
         dueDate: dueDateTimestamp,
         reminderTime: reminderTimeTimestamp,
+        recurrence: recurrencePayload,
       });
       onClose();
     } catch (err: any) {
@@ -288,6 +325,64 @@ export default function TaskForm({ taskToEdit, onSave, onClose }: TaskFormProps)
                   />
                 </motion.div>
               )}
+            </div>
+
+            {/* Optional Recurrence Setup */}
+            <div className="bg-white p-4 rounded-none border border-[#1A1A1A] space-y-3">
+              <label className="block text-[10px] font-bold text-[#1A1A1A] uppercase tracking-[0.15em]">
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5 text-[#C2410C]" /> Repeat Settings
+                </span>
+              </label>
+              
+              <div className="space-y-3">
+                <div>
+                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest block font-mono mb-1">Frequency</span>
+                  <select
+                    value={recurrenceFrequency}
+                    onChange={(e) => setRecurrenceFrequency(e.target.value as any)}
+                    className="w-full px-3 py-2 bg-white border border-[#1A1A1A] rounded-none outline-none text-[#1A1A1A] text-xs font-serif transition-all cursor-pointer"
+                  >
+                    <option value="none">Does Not Repeat</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="custom">Custom Interval</option>
+                  </select>
+                </div>
+
+                {recurrenceFrequency === 'custom' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="grid grid-cols-2 gap-3 pt-1"
+                  >
+                    <div>
+                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest block font-mono mb-1">Repeat Every</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="99"
+                        value={recurrenceInterval}
+                        onChange={(e) => setRecurrenceInterval(Math.max(1, parseInt(e.target.value) || 1))}
+                        className="w-full px-3 py-2 bg-white border border-[#1A1A1A] rounded-none outline-none text-[#1A1A1A] text-xs font-serif transition-all"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest block font-mono mb-1">Pacing Unit</span>
+                      <select
+                        value={recurrenceUnit}
+                        onChange={(e) => setRecurrenceUnit(e.target.value as any)}
+                        className="w-full px-3 py-2 bg-white border border-[#1A1A1A] rounded-none outline-none text-[#1A1A1A] text-xs font-serif transition-all cursor-pointer"
+                      >
+                        <option value="days">Days</option>
+                        <option value="weeks">Weeks</option>
+                        <option value="months">Months</option>
+                      </select>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
             </div>
 
             {/* Submission Buttons */}
