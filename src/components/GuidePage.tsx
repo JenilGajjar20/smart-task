@@ -12,6 +12,7 @@ interface GuidePageProps {
   onBack: () => void;
   triggerToast: (message: string, type?: 'success' | 'error') => void;
   user: User | null;
+  onRequireAuth: () => void;
 }
 
 interface Preset {
@@ -26,7 +27,7 @@ interface Preset {
   tag: string;
 }
 
-export default function GuidePage({ onBack, triggerToast, user }: GuidePageProps) {
+export default function GuidePage({ onBack, triggerToast, user, onRequireAuth }: GuidePageProps) {
   const baseKey = user ? `smarttask_user_${user.uid}` : 'smarttask';
 
   // State to track custom sandbox values inside the interactive playground
@@ -93,6 +94,10 @@ export default function GuidePage({ onBack, triggerToast, user }: GuidePageProps
   ];
 
   const applyPreset = async (preset: Preset) => {
+    if (!user) {
+      onRequireAuth();
+      return;
+    }
     try {
       localStorage.setItem(`${baseKey}_profile_role`, preset.role);
       localStorage.setItem(`${baseKey}_profile_station`, preset.station);

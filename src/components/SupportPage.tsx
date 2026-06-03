@@ -6,9 +6,10 @@ interface SupportPageProps {
   onBack: () => void;
   triggerToast: (message: string, type?: 'success' | 'error') => void;
   userEmail: string;
+  onRequireAuth: () => void;
 }
 
-export default function SupportPage({ onBack, triggerToast, userEmail }: SupportPageProps) {
+export default function SupportPage({ onBack, triggerToast, userEmail, onRequireAuth }: SupportPageProps) {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -16,6 +17,10 @@ export default function SupportPage({ onBack, triggerToast, userEmail }: Support
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!userEmail) {
+      onRequireAuth();
+      return;
+    }
     if (!subject.trim() || !message.trim()) {
       triggerToast('Please complete all correspondence fields.', 'error');
       return;

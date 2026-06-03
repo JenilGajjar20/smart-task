@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 import { Task, Priority, Category, OperationType, RecurrenceSettings } from './types';
 import AuthPage from './components/AuthPage';
+import AuthModal from './components/AuthModal';
 import Dashboard from './components/Dashboard';
 import TaskList from './components/TaskList';
 import TaskForm from './components/TaskForm';
@@ -21,9 +22,61 @@ import {
   CheckSquare, LogOut, Plus, Sparkles, RefreshCw, User as UserIcon, BellRing, Settings, CalendarRange, Clock, AlertCircle, X, BookOpen
 } from 'lucide-react';
 
+const GUEST_TASKS: Task[] = [
+  {
+    id: 'guest_t1',
+    userId: 'guest',
+    title: 'Review System Dispatch Log coordinates',
+    description: 'Verify system alignments and update dispatch records for the primary physical workspace.',
+    priority: 'high',
+    category: 'Work',
+    completed: false,
+    dueDate: Timestamp.fromDate(new Date()),
+    createdAt: Timestamp.fromDate(new Date()),
+    updatedAt: Timestamp.fromDate(new Date()),
+  },
+  {
+    id: 'guest_t2',
+    userId: 'guest',
+    title: 'Configure domestic garden irrigation pipeline',
+    description: 'Set custom intervals for backyard sprinkler zones. An elegant template of personal and household tasks.',
+    priority: 'medium',
+    category: 'Personal',
+    completed: false,
+    dueDate: Timestamp.fromDate(new Date(Date.now() + 86400000)), // tomorrow
+    createdAt: Timestamp.fromDate(new Date()),
+    updatedAt: Timestamp.fromDate(new Date()),
+  },
+  {
+    id: 'guest_t3',
+    userId: 'guest',
+    title: 'Complete chapter draft for research paper',
+    description: 'Prepare materials and edit literature citations for the upcoming academic seminar docket.',
+    priority: 'high',
+    category: 'Education',
+    completed: true,
+    dueDate: Timestamp.fromDate(new Date(Date.now() - 43200000)), // 12 hours ago
+    createdAt: Timestamp.fromDate(new Date()),
+    updatedAt: Timestamp.fromDate(new Date()),
+  },
+  {
+    id: 'guest_t4',
+    userId: 'guest',
+    title: 'Register digital assets and portfolio metadata',
+    description: 'Organize design systems, content calendars, and reference mockups inside the draft files repository.',
+    priority: 'low',
+    category: 'Shopping',
+    completed: false,
+    dueDate: Timestamp.fromDate(new Date(Date.now() + 172800000)), // 2 days from now
+    createdAt: Timestamp.fromDate(new Date()),
+    updatedAt: Timestamp.fromDate(new Date()),
+  }
+];
+
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authStateLoaded, setAuthStateLoaded] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [tasksLoaded, setTasksLoaded] = useState(false);
 
@@ -63,14 +116,15 @@ export default function App() {
       setUser(currentUser);
       setAuthStateLoaded(true);
       if (!currentUser) {
-        setTasks([]);
-        setTasksLoaded(false);
-        // Reset properties
-        setTheme('editorial');
-        setDarkMode(false);
-        setProfileNickname('');
-        setProfileRole('Workspace Coordinator');
-        setProfileStation('Primary Hub No. 1');
+        setTasks(GUEST_TASKS);
+        setTasksLoaded(true);
+        // Reset properties to guest fallbacks
+        const baseKey = 'smarttask_guest';
+        setTheme(localStorage.getItem(`${baseKey}_theme`) || 'editorial');
+        setDarkMode(localStorage.getItem(`${baseKey}_dark_mode`) === 'true');
+        setProfileNickname('Guest Contributor');
+        setProfileRole('Workspace Observer');
+        setProfileStation('Public Reading Desk');
       }
     });
     return () => unsubscribe();
@@ -133,13 +187,12 @@ export default function App() {
 
   useEffect(() => {
     const handleSettingsUpdate = () => {
-      if (!user) return;
-      const baseKey = `smarttask_user_${user.uid}`;
+      const baseKey = user ? `smarttask_user_${user.uid}` : 'smarttask_guest';
       setTheme(localStorage.getItem(`${baseKey}_theme`) || 'editorial');
       setDarkMode(localStorage.getItem(`${baseKey}_dark_mode`) === 'true');
-      setProfileNickname(localStorage.getItem(`${baseKey}_profile_nickname`) || '');
-      setProfileRole(localStorage.getItem(`${baseKey}_profile_role`) || 'Workspace Coordinator');
-      setProfileStation(localStorage.getItem(`${baseKey}_profile_station`) || 'Primary Hub No. 1');
+      setProfileNickname(localStorage.getItem(`${baseKey}_profile_nickname`) || (user ? '' : 'Guest Contributor'));
+      setProfileRole(localStorage.getItem(`${baseKey}_profile_role`) || (user ? 'Workspace Coordinator' : 'Workspace Observer'));
+      setProfileStation(localStorage.getItem(`${baseKey}_profile_station`) || (user ? 'Primary Hub No. 1' : 'Public Reading Desk'));
     };
     window.addEventListener('smarttask_settings_updated', handleSettingsUpdate);
     return () => window.removeEventListener('smarttask_settings_updated', handleSettingsUpdate);
@@ -187,7 +240,11 @@ export default function App() {
 
   // 2. Load tasks in real-time if user is authenticated
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setTasks(GUEST_TASKS);
+      setTasksLoaded(true);
+      return;
+    }
 
     setTasksLoaded(false);
     const path = 'tasks';
@@ -251,7 +308,11 @@ export default function App() {
     recurrence?: RecurrenceSettings | null;
     project?: string | null;
   }) => {
-    if (!user) return;
+    if (!user) {
+      setIsAuthModalOpen(true);
+      triggerToast('Authentication Required. Please connect your account to register and synchronize tasks.', 'error');
+      return;
+    }
 
     const path = 'tasks';
     try {
@@ -323,7 +384,11 @@ export default function App() {
 
   // Toggle task completion status
   const handleToggleComplete = async (task: Task) => {
-    if (!user) return;
+    if (!user) {
+      setIsAuthModalOpen(true);
+      triggerToast('Authentication Required. Please connect your account to complete tasks.', 'error');
+      return;
+    }
     const path = 'tasks';
     const nextCompletedState = !task.completed;
     
@@ -422,6 +487,11 @@ export default function App() {
 
   // Delete task 
   const handleDeleteTask = async (taskId: string) => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      triggerToast('Authentication Required. Please connect your account to delete tasks.', 'error');
+      return;
+    }
     const path = 'tasks';
     try {
       const docRef = doc(db, path, taskId);
@@ -433,6 +503,11 @@ export default function App() {
   };
 
   const handleEditInit = (task: Task) => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      triggerToast('Authentication Required. Please connect your account to update tasks.', 'error');
+      return;
+    }
     setTaskToEdit(task);
     setIsFormOpen(true);
   };
@@ -444,10 +519,6 @@ export default function App() {
         <span className="text-[#1A1A1A] text-xs font-bold tracking-[0.2em] uppercase">Syncing Workspace...</span>
       </div>
     );
-  }
-
-  if (!user) {
-    return <AuthPage onAuthSuccess={() => triggerToast('Successfully authenticated with Google login.')} />;
   }
 
   // Active alarms finder (tasks due today that have reminders set)
@@ -507,14 +578,14 @@ export default function App() {
               <p className="text-[10px] font-bold uppercase tracking-widest opacity-60 mb-1">
                 {profileRole} // {profileStation}
               </p>
-              <div className="text-xl font-serif tracking-tight flex items-center md:justify-end gap-2">
-                <span>{profileNickname || user.displayName || 'Workspace Contributor'}</span>
+              <div className="text-xl font-serif tracking-tight flex items-center md:justify-end gap-2 font-medium">
+                <span>{profileNickname || (user ? user.displayName || 'Workspace Contributor' : 'Guest Contributor')}</span>
               </div>
-              <p className="text-xs font-mono opacity-50 mt-0.5">{user.email}</p>
+              <p className="text-xs font-mono opacity-50 mt-0.5">{user ? user.email : 'guest-session@smarttask.net'}</p>
             </div>
             
             <div className="flex items-center gap-3 mt-1">
-              {user.photoURL ? (
+              {user && user.photoURL ? (
                 <img 
                   src={user.photoURL} 
                   alt="Avatar" 
@@ -527,14 +598,25 @@ export default function App() {
                 </div>
               )}
               
-              <button
-                id="header-logout-btn"
-                onClick={handleSignOut}
-                className="px-2.5 py-1.5 border border-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer"
-                title="Log out of application"
-              >
-                Exit Workspace
-              </button>
+              {user ? (
+                <button
+                  id="header-logout-btn"
+                  onClick={handleSignOut}
+                  className="px-2.5 py-1.5 border border-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer"
+                  title="Log out of application"
+                >
+                  Exit Workspace
+                </button>
+              ) : (
+                <button
+                  id="header-signin-btn"
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="px-4 py-1.5 border-2 border-[#C2410C] bg-[#C2410C] text-white hover:bg-transparent hover:text-[#C2410C] text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer"
+                  title="Connect your Google Account"
+                >
+                  Connect Account
+                </button>
+              )}
             </div>
           </div>
         </header>
@@ -568,7 +650,11 @@ export default function App() {
             <SupportPage 
               onBack={() => setCurrentView('agenda')} 
               triggerToast={triggerToast} 
-              userEmail={user.email || ''} 
+              userEmail={user ? user.email || '' : ''} 
+              onRequireAuth={() => {
+                setIsAuthModalOpen(true);
+                triggerToast('Authentication Required. Please connect your account to submit support tickets.', 'error');
+              }}
             />
           ) : currentView === 'settings' ? (
             <SettingsPage 
@@ -576,12 +662,20 @@ export default function App() {
               triggerToast={triggerToast} 
               tasks={tasks}
               user={user}
+              onRequireAuth={() => {
+                setIsAuthModalOpen(true);
+                triggerToast('Authentication Required. Please connect your account to modify workspace settings.', 'error');
+              }}
             />
           ) : currentView === 'guide' ? (
             <GuidePage 
               onBack={() => setCurrentView('agenda')} 
               triggerToast={triggerToast} 
               user={user}
+              onRequireAuth={() => {
+                setIsAuthModalOpen(true);
+                triggerToast('Authentication Required. Please connect your account to apply preset configurations.', 'error');
+              }}
             />
           ) : (
             <div className="space-y-8">
@@ -630,6 +724,11 @@ export default function App() {
                     <button
                       id="header-create-task-btn"
                       onClick={() => {
+                        if (!user) {
+                          setIsAuthModalOpen(true);
+                          triggerToast('Authentication Required. Please connect your account to compose tasks.', 'error');
+                          return;
+                        }
                         setTaskToEdit(null);
                         setIsFormOpen(true);
                       }}
@@ -675,7 +774,11 @@ export default function App() {
             >
               Settings
             </span>
-            <span className="hover:underline cursor-pointer" onClick={handleSignOut}>Exit Workspace</span>
+            {user ? (
+              <span className="hover:underline cursor-pointer" onClick={handleSignOut}>Exit Workspace</span>
+            ) : (
+              <span className="hover:underline cursor-pointer text-[#C2410C]" onClick={() => setIsAuthModalOpen(true)}>Connect Account</span>
+            )}
           </div>
         </footer>
       </div>
@@ -694,6 +797,16 @@ export default function App() {
           />
         )}
       </AnimatePresence>
+
+      {/* Global Security Auth Prompt Modal */}
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+        onSuccess={() => {
+          setIsAuthModalOpen(false);
+          triggerToast('Successfully authenticated. Secure Cloud Sync enabled!');
+        }}
+      />
     </div>
   );
 }

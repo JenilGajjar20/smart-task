@@ -10,9 +10,10 @@ interface SettingsPageProps {
   triggerToast: (message: string, type?: 'success' | 'error') => void;
   tasks: Task[];
   user: any;
+  onRequireAuth: () => void;
 }
 
-export default function SettingsPage({ onBack, triggerToast, tasks, user }: SettingsPageProps) {
+export default function SettingsPage({ onBack, triggerToast, tasks, user, onRequireAuth }: SettingsPageProps) {
   const baseKey = user ? `smarttask_user_${user.uid}` : 'smarttask';
 
   // Read existing preferences from localStorage or set defaults
@@ -54,6 +55,11 @@ export default function SettingsPage({ onBack, triggerToast, tasks, user }: Sett
 
   // Save Settings handler
   const handleSaveSettings = async () => {
+    if (!user) {
+      onRequireAuth();
+      return;
+    }
+
     localStorage.setItem(`${baseKey}_theme`, theme);
     localStorage.setItem(`${baseKey}_dark_mode`, String(darkMode));
     localStorage.setItem(`${baseKey}_profile_nickname`, profileNickname);
@@ -407,6 +413,10 @@ export default function SettingsPage({ onBack, triggerToast, tasks, user }: Sett
             </div>
             <button
               onClick={async () => {
+                if (!user) {
+                  onRequireAuth();
+                  return;
+                }
                 if (window.confirm('Are you absolutely sure you wish to set all local workspace preferences back to system factory defaults?')) {
                   localStorage.removeItem(`${baseKey}_default_category`);
                   localStorage.removeItem(`${baseKey}_default_priority`);
