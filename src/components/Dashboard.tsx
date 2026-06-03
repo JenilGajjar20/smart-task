@@ -53,13 +53,45 @@ export default function Dashboard({ tasks, onSelectTab, activeTab }: DashboardPr
     motivation = "First milestones successfully reached. Steady execution breeds incredible results.";
   }
 
-  // Calculate mock completion heights for the last 7 days of the week
-  // Sunday to Saturday based on current actual tasks count to give it real feeling
+  // Calculate actual completion heights and tallies for the 7 days of the current week
+  // Sunday to Saturday based on current actual tasks count
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const currentDayIndex = now.getDay();
-  const mockHeights = [40, 60, 35, 85, 55, 20, 95];
-  // Replace the today value with actual progress
-  mockHeights[currentDayIndex] = total > 0 ? completionRate : 15;
+
+  // Find the start of the current week (Sunday)
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay());
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const realWeeklyData = daysOfWeek.map((day, dIdx) => {
+    const targetDay = new Date(startOfWeek);
+    targetDay.setDate(startOfWeek.getDate() + dIdx);
+    
+    const startOfDay = new Date(targetDay);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(targetDay);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    const tasksOnDay = tasks.filter(t => {
+      if (!t.dueDate) return false;
+      try {
+        const tDate = t.dueDate.toDate();
+        return tDate >= startOfDay && tDate <= endOfDay;
+      } catch (e) {
+        return false;
+      }
+    });
+
+    const totalOnDay = tasksOnDay.length;
+    const completedOnDay = tasksOnDay.filter(t => t.completed).length;
+    const rate = totalOnDay > 0 ? Math.round((completedOnDay / totalOnDay) * 100) : 0;
+
+    return {
+      rate,
+      total: totalOnDay,
+      completed: completedOnDay,
+    };
+  });
 
   const statCards = [
     {
@@ -259,17 +291,31 @@ export default function Dashboard({ tasks, onSelectTab, activeTab }: DashboardPr
             </div>
             
             <div className="h-28 w-full flex items-end justify-between gap-1.5 pt-2">
-              {daysOfWeek.map((day, dIdx) => {
+              {realWeeklyData.map((dayData, dIdx) => {
+                const day = daysOfWeek[dIdx];
                 const isActiveDay = dIdx === currentDayIndex;
-                const heightVal = mockHeights[dIdx];
+                const heightVal = dayData.total > 0 ? dayData.rate : 0;
+                
+                // Construct informative tooltip text stating actual status
+                const tooltipText = dayData.total === 0 
+                  ? "No tasks scheduled" 
+                  : `${dayData.rate}% (${dayData.completed}/${dayData.total} done)`;
+
                 return (
-                  <div key={day} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
-                    <div className="w-full bg-slate-200 h-full rounded-none overflow-hidden relative">
+                  <div key={day} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end relative group">
+                    {/* Floating hover tooltip precisely above the weekly metric bar */}
+                    <div 
+                      className="absolute left-1/2 -translate-x-1/2 bg-white border border-[#1A1A1A] px-2 py-1 text-[9px] font-mono font-bold text-[#1A1A1A] whitespace-nowrap shadow-md opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none z-20"
+                      style={{ bottom: `calc(${heightVal}% + 6px)` }}
+                    >
+                      {tooltipText}
+                    </div>
+                    <div className="w-full bg-slate-200 h-full rounded-none overflow-hidden relative cursor-pointer">
                       <motion.div 
                         initial={{ height: 0 }}
                         animate={{ height: `${heightVal}%` }}
                         transition={{ duration: 0.6, delay: dIdx * 0.05 }}
-                        className={`absolute bottom-0 left-0 right-0 ${isActiveDay ? 'bg-[#C2410C]' : 'bg-[#1A1A1A] opacity-80'}`}
+                        className={`absolute bottom-0 left-0 right-0 ${isActiveDay ? 'bg-[#C2410C]' : 'bg-[#1A1A1A] opacity-80 group-hover:opacity-100 transition-opacity'}`}
                       />
                     </div>
                   </div>
