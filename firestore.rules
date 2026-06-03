@@ -31,7 +31,7 @@ service cloud.firestore {
     // --- Task entity validation ---
     function isValidTask(task) {
       return task.keys().hasAll(['userId', 'title', 'priority', 'category', 'completed', 'dueDate', 'createdAt', 'updatedAt']) &&
-             task.keys().size() >= 8 && task.keys().size() <= 12 &&
+             task.keys().size() >= 8 && task.keys().size() <= 32 &&
              task.userId == request.auth.uid &&
              task.title is string && task.title.size() >= 1 && task.title.size() <= 100 &&
              task.priority is string && (task.priority == 'low' || task.priority == 'medium' || task.priority == 'high') &&

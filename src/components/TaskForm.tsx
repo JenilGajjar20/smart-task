@@ -16,6 +16,22 @@ interface TaskFormProps {
     reminderTime: Date | null;
     recurrence?: RecurrenceSettings | null;
     project?: string | null;
+    subtasks?: { id: string; title: string; completed: boolean }[];
+    estimatedTime?: number;
+    notes?: string;
+    amount?: number;
+    paymentStatus?: 'pending' | 'paid';
+    recurringBill?: boolean;
+    habitType?: string;
+    streak?: number;
+    shoppingQuantity?: number;
+    shoppingStore?: string;
+    shoppingCost?: number;
+    subject?: string;
+    studyDuration?: number;
+    resourceLink?: string;
+    dependency?: string;
+    estimatedEffort?: string;
   }) => Promise<void>;
   onClose: () => void;
 }
@@ -30,6 +46,27 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
   const [category, setCategory] = useState<Category>(() => {
     return (localStorage.getItem('smarttask_default_category') as Category) || 'Work';
   });
+
+  // Additional personalization fields states
+  const [subtasks, setSubtasks] = useState<{ id: string; title: string; completed: boolean }[]>([]);
+  const [subtaskInput, setSubtaskInput] = useState('');
+  const [estimatedTime, setEstimatedTime] = useState<number>(1);
+  const [notes, setNotes] = useState('');
+  
+  // Category-specific fields states
+  const [amount, setAmount] = useState<number>(0);
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid'>('pending');
+  const [recurringBill, setRecurringBill] = useState(false);
+  const [habitType, setHabitType] = useState('Workout');
+  const [streak, setStreak] = useState<number>(0);
+  const [shoppingQuantity, setShoppingQuantity] = useState<number>(1);
+  const [shoppingStore, setShoppingStore] = useState('');
+  const [shoppingCost, setShoppingCost] = useState<number>(0);
+  const [subject, setSubject] = useState('');
+  const [studyDuration, setStudyDuration] = useState<number>(30);
+  const [resourceLink, setResourceLink] = useState('');
+  const [dependency, setDependency] = useState('');
+  const [estimatedEffort, setEstimatedEffort] = useState('Medium');
   
   // Format dates to ISO-like local datetime-local string
   const formatDateToInput = (dateObj?: Date | null): string => {
@@ -82,6 +119,22 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
         setRecurrenceInterval(1);
         setRecurrenceUnit('days');
       }
+      setSubtasks(taskToEdit.subtasks || []);
+      setEstimatedTime(taskToEdit.estimatedTime !== undefined ? taskToEdit.estimatedTime : 1);
+      setNotes(taskToEdit.notes || '');
+      setAmount(taskToEdit.amount || 0);
+      setPaymentStatus(taskToEdit.paymentStatus || 'pending');
+      setRecurringBill(taskToEdit.recurringBill || false);
+      setHabitType(taskToEdit.habitType || 'Workout');
+      setStreak(taskToEdit.streak || 0);
+      setShoppingQuantity(taskToEdit.shoppingQuantity || 1);
+      setShoppingStore(taskToEdit.shoppingStore || '');
+      setShoppingCost(taskToEdit.shoppingCost || 0);
+      setSubject(taskToEdit.subject || '');
+      setStudyDuration(taskToEdit.studyDuration || 30);
+      setResourceLink(taskToEdit.resourceLink || '');
+      setDependency(taskToEdit.dependency || '');
+      setEstimatedEffort(taskToEdit.estimatedEffort || 'Medium');
     } else {
       setTitle('');
       setDescription('');
@@ -94,6 +147,22 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
       setRecurrenceFrequency('none');
       setRecurrenceInterval(1);
       setRecurrenceUnit('days');
+      setSubtasks([]);
+      setEstimatedTime(1);
+      setNotes('');
+      setAmount(0);
+      setPaymentStatus('pending');
+      setRecurringBill(false);
+      setHabitType('Workout');
+      setStreak(0);
+      setShoppingQuantity(1);
+      setShoppingStore('');
+      setShoppingCost(0);
+      setSubject('');
+      setStudyDuration(30);
+      setResourceLink('');
+      setDependency('');
+      setEstimatedEffort('Medium');
     }
   }, [taskToEdit]);
 
@@ -148,6 +217,22 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
         reminderTime: reminderTimeDate,
         recurrence: recurrencePayload,
         project: project.trim() || null,
+        subtasks,
+        estimatedTime,
+        notes: notes.trim() || undefined,
+        amount,
+        paymentStatus,
+        recurringBill,
+        habitType,
+        streak,
+        shoppingQuantity,
+        shoppingStore: shoppingStore.trim() || undefined,
+        shoppingCost,
+        subject: subject.trim() || undefined,
+        studyDuration,
+        resourceLink: resourceLink.trim() || undefined,
+        dependency: dependency.trim() || undefined,
+        estimatedEffort,
       });
       onClose();
     } catch (err: any) {
@@ -302,6 +387,280 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
                     );
                   })}
                 </div>
+              </div>
+            </div>
+
+            {/* Category-Specific Form Enhancements */}
+            <div className="p-4 border border-[#1A1A1A] bg-[#F1EFEA]">
+              <div className="flex items-center gap-2 mb-2 pb-1 border-b border-[#1A1A1A]/10">
+                <Sparkles className="h-3.5 w-3.5 text-[#C2410C]" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#1A1A1A] font-mono">
+                  {category} Extra-Dimensional Parameters
+                </span>
+              </div>
+
+              {category === 'Finance' && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 font-mono">Amount ($)</label>
+                    <input
+                      type="number"
+                      value={amount || ''}
+                      onChange={(e) => setAmount(Number(e.target.value) || 0)}
+                      placeholder="0.00"
+                      className="w-full px-2 py-1 bg-white border border-[#1A1A1A] text-[#1A1A1A] text-xs outline-none font-serif"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 font-mono">Payment Status</label>
+                    <select
+                      value={paymentStatus}
+                      onChange={(e) => setPaymentStatus(e.target.value as 'pending' | 'paid')}
+                      className="w-full px-2 py-1 bg-white border border-[#1A1A1A] text-[#1A1A1A] text-xs outline-none font-serif cursor-pointer"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="paid">Paid</option>
+                    </select>
+                  </div>
+                  <div className="flex items-end pb-1.5">
+                    <label className="flex items-center gap-1.5 cursor-pointer text-xs font-serif text-[#1A1A1A]">
+                      <input
+                        type="checkbox"
+                        checked={recurringBill}
+                        onChange={(e) => setRecurringBill(e.target.checked)}
+                        className="rounded-none border-[#1A1A1A]"
+                      />
+                      <span>Recurring Bill</span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {category === 'Health' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 font-mono">Type of Wellness Practice</label>
+                    <select
+                      value={habitType}
+                      onChange={(e) => setHabitType(e.target.value)}
+                      className="w-full px-2 py-1 bg-white border border-[#1A1A1A] text-[#1A1A1A] text-xs outline-none font-serif cursor-pointer"
+                    >
+                      <option value="Workout">Workout / Exercise</option>
+                      <option value="Diet">Dietary Nourishment</option>
+                      <option value="Medication">Medication / Prescription</option>
+                      <option value="Meditation">Mindful Meditation</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 font-mono">Current Streak (Days)</label>
+                    <input
+                      type="number"
+                      value={streak}
+                      onChange={(e) => setStreak(Math.max(0, Number(e.target.value) || 0))}
+                      className="w-full px-2 py-1 bg-white border border-[#1A1A1A] text-[#1A1A1A] text-xs outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {category === 'Shopping' && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 font-mono">Store Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Costco"
+                      value={shoppingStore}
+                      onChange={(e) => setShoppingStore(e.target.value)}
+                      className="w-full px-2 py-1 bg-white border border-[#1A1A1A] text-[#1A1A1A] text-xs outline-none font-serif"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 font-mono">Quantity</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={shoppingQuantity}
+                      onChange={(e) => setShoppingQuantity(Math.max(1, Number(e.target.value) || 1))}
+                      className="w-full px-2 py-1 bg-white border border-[#1A1A1A] text-[#1A1A1A] text-xs outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 font-mono">Budget Cost ($)</label>
+                    <input
+                      type="number"
+                      value={shoppingCost || ''}
+                      onChange={(e) => setShoppingCost(Number(e.target.value) || 0)}
+                      placeholder="0.00"
+                      className="w-full px-2 py-1 bg-white border border-[#1A1A1A] text-[#1A1A1A] text-xs outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {category === 'Education' && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 font-mono">Academic Subject</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Calculus, Physics"
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                      className="w-full px-2 py-1 bg-white border border-[#1A1A1A] text-[#1A1A1A] text-xs outline-none font-serif"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 font-mono">Study Target (Mins)</label>
+                    <input
+                      type="number"
+                      min="5"
+                      value={studyDuration}
+                      onChange={(e) => setStudyDuration(Math.max(5, Number(e.target.value) || 30))}
+                      className="w-full px-2 py-1 bg-white border border-[#1A1A1A] text-[#1A1A1A] text-xs outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 font-mono">Resource URL</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. drive.google.com"
+                      value={resourceLink}
+                      onChange={(e) => setResourceLink(e.target.value)}
+                      className="w-full px-2 py-1 bg-white border border-[#1A1A1A] text-[#1A1A1A] text-xs outline-none font-serif"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {category === 'Work' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 font-mono">Workspace Dependency</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Blocked on layout approval"
+                      value={dependency}
+                      onChange={(e) => setDependency(e.target.value)}
+                      className="w-full px-2 py-1 bg-white border border-[#1A1A1A] text-[#1A1A1A] text-xs outline-none font-serif"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 font-mono">Estimated Effort Size</label>
+                    <select
+                      value={estimatedEffort}
+                      onChange={(e) => setEstimatedEffort(e.target.value)}
+                      className="w-full px-2 py-1 bg-white border border-[#1A1A1A] text-[#1A1A1A] text-xs outline-none font-serif cursor-pointer"
+                    >
+                      <option value="Low">Low Effort</option>
+                      <option value="Medium">Medium Effort</option>
+                      <option value="High">High Effort</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {category === 'Personal' && (
+                <p className="text-[10px] text-slate-500 italic font-serif">Focus on internal fulfillment. No complex variables required.</p>
+              )}
+              {category === 'Other' && (
+                <p className="text-[10px] text-slate-500 italic font-serif">General entry point. Use standard metadata tags below.</p>
+              )}
+            </div>
+
+            {/* Estimated Hour Effort & Notes Segment */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-bold text-[#1A1A1A] uppercase tracking-[0.15em] mb-1.5 font-sans">Estimated Hours Target</label>
+                <input
+                  type="number"
+                  min="0.5"
+                  step="0.5"
+                  value={estimatedTime}
+                  onChange={(e) => setEstimatedTime(Math.max(0.5, Number(e.target.value) || 1))}
+                  className="w-full px-4 py-2.5 bg-white border border-[#1A1A1A] rounded-none outline-none focus:ring-1 focus:ring-[#C2410C] text-[#1A1A1A] text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1A1A1A] uppercase tracking-[0.15em] mb-1.5 font-sans">Confidential Notes / Links</label>
+                <input
+                  type="text"
+                  placeholder="Secret access keys, drive URLs..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-white border border-[#1A1A1A] rounded-none outline-none focus:ring-1 focus:ring-[#C2410C] text-[#1A1A1A] text-sm font-serif"
+                />
+              </div>
+            </div>
+
+            {/* Interactive Subtasks Checklist Builder */}
+            <div className="bg-white p-4 rounded-none border border-[#1A1A1A] space-y-3">
+              <span className="block text-[10px] font-bold text-[#1A1A1A] uppercase tracking-[0.15em] font-sans">
+                Interactive Checklists / Subtasks ({subtasks.length})
+              </span>
+              
+              {subtasks.length > 0 && (
+                <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
+                  {subtasks.map((sub, idx) => (
+                    <div key={sub.id} className="flex items-center justify-between bg-[#F9F8F6] p-2 border border-[#1A1A1A]/10">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={sub.completed}
+                          onChange={(e) => {
+                            const updated = [...subtasks];
+                            updated[idx].completed = e.target.checked;
+                            setSubtasks(updated);
+                          }}
+                          className="rounded-none border-[#1A1A1A] h-3.5 w-3.5 text-[#1A1A1A]"
+                        />
+                        <span className={`text-xs font-serif ${sub.completed ? 'line-through text-slate-400' : 'text-[#1A1A1A]'}`}>
+                          {sub.title}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSubtasks(subtasks.filter((_, i) => i !== idx));
+                        }}
+                        className="text-rose-600 hover:text-rose-800 text-[10px] font-mono hover:underline uppercase font-bold cursor-pointer"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Add item to checklist..."
+                  value={subtaskInput}
+                  onChange={(e) => setSubtaskInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (subtaskInput.trim()) {
+                        setSubtasks([...subtasks, { id: Date.now().toString(), title: subtaskInput.trim(), completed: false }]);
+                        setSubtaskInput('');
+                      }
+                    }
+                  }}
+                  className="flex-1 px-3 py-1.5 bg-white border border-[#1A1A1A] rounded-none outline-none text-xs font-serif"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (subtaskInput.trim()) {
+                      setSubtasks([...subtasks, { id: Date.now().toString(), title: subtaskInput.trim(), completed: false }]);
+                      setSubtaskInput('');
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-[#1A1A1A] hover:bg-[#C2410C] text-white font-bold text-[10px] uppercase tracking-wider rounded-none cursor-pointer"
+                >
+                  Add
+                </button>
               </div>
             </div>
 

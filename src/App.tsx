@@ -110,6 +110,14 @@ export default function App() {
   const [profileRole, setProfileRole] = useState<string>('Workspace Coordinator');
   const [profileStation, setProfileStation] = useState<string>('Primary Hub No. 1');
 
+  // Personalization settings
+  const [workspaceName, setWorkspaceName] = useState<string>('SmartTask');
+  const [workspaceAvatar, setWorkspaceAvatar] = useState<string>('📝');
+  const [defaultTaskView, setDefaultTaskView] = useState<string>('agenda');
+  const [defaultReminderTime, setDefaultReminderTime] = useState<number>(60);
+  const [layoutMode, setLayoutMode] = useState<'compact' | 'spacious'>('spacious');
+  const [fontSize, setFontSize] = useState<'small' | 'default' | 'large'>('default');
+
   // 1. Listen for auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -125,6 +133,12 @@ export default function App() {
         setProfileNickname('Guest Contributor');
         setProfileRole('Workspace Observer');
         setProfileStation('Public Reading Desk');
+        setWorkspaceName(localStorage.getItem(`${baseKey}_workspace_name`) || 'SmartTask');
+        setWorkspaceAvatar(localStorage.getItem(`${baseKey}_workspace_avatar`) || '📝');
+        setDefaultTaskView(localStorage.getItem(`${baseKey}_default_task_view`) || 'agenda');
+        setDefaultReminderTime(Number(localStorage.getItem(`${baseKey}_default_reminder_time`)) || 60);
+        setLayoutMode((localStorage.getItem(`${baseKey}_layout_mode`) as 'compact' | 'spacious') || 'spacious');
+        setFontSize((localStorage.getItem(`${baseKey}_font_size`) as 'small' | 'default' | 'large') || 'default');
       }
     });
     return () => unsubscribe();
@@ -142,12 +156,24 @@ export default function App() {
     const cachedNickname = localStorage.getItem(`${baseKey}_profile_nickname`) || user.displayName || '';
     const cachedRole = localStorage.getItem(`${baseKey}_profile_role`) || 'Workspace Coordinator';
     const cachedStation = localStorage.getItem(`${baseKey}_profile_station`) || 'Primary Hub No. 1';
+    const cachedWorkspaceName = localStorage.getItem(`${baseKey}_workspace_name`) || 'SmartTask';
+    const cachedWorkspaceAvatar = localStorage.getItem(`${baseKey}_workspace_avatar`) || '📝';
+    const cachedDefaultTaskView = localStorage.getItem(`${baseKey}_default_task_view`) || 'agenda';
+    const cachedDefaultReminderTime = Number(localStorage.getItem(`${baseKey}_default_reminder_time`)) || 60;
+    const cachedLayoutMode = (localStorage.getItem(`${baseKey}_layout_mode`) as 'compact' | 'spacious') || 'spacious';
+    const cachedFontSize = (localStorage.getItem(`${baseKey}_font_size`) as 'small' | 'default' | 'large') || 'default';
 
     setTheme(cachedTheme);
     setDarkMode(cachedDarkMode);
     setProfileNickname(cachedNickname);
     setProfileRole(cachedRole);
     setProfileStation(cachedStation);
+    setWorkspaceName(cachedWorkspaceName);
+    setWorkspaceAvatar(cachedWorkspaceAvatar);
+    setDefaultTaskView(cachedDefaultTaskView);
+    setDefaultReminderTime(cachedDefaultReminderTime);
+    setLayoutMode(cachedLayoutMode);
+    setFontSize(cachedFontSize);
 
     // Read synced settings securely in real-time from Firestore setting doc
     const unsubscribe = onSnapshot(
@@ -175,6 +201,31 @@ export default function App() {
             setProfileStation(data.profileStation);
             localStorage.setItem(`${baseKey}_profile_station`, data.profileStation);
           }
+          // Sync new fields
+          if (data.workspaceName !== undefined) {
+            setWorkspaceName(data.workspaceName);
+            localStorage.setItem(`${baseKey}_workspace_name`, data.workspaceName);
+          }
+          if (data.workspaceAvatar !== undefined) {
+            setWorkspaceAvatar(data.workspaceAvatar);
+            localStorage.setItem(`${baseKey}_workspace_avatar`, data.workspaceAvatar);
+          }
+          if (data.defaultTaskView !== undefined) {
+            setDefaultTaskView(data.defaultTaskView);
+            localStorage.setItem(`${baseKey}_default_task_view`, data.defaultTaskView);
+          }
+          if (data.defaultReminderTime !== undefined) {
+            setDefaultReminderTime(Number(data.defaultReminderTime));
+            localStorage.setItem(`${baseKey}_default_reminder_time`, String(data.defaultReminderTime));
+          }
+          if (data.layoutMode !== undefined) {
+            setLayoutMode(data.layoutMode);
+            localStorage.setItem(`${baseKey}_layout_mode`, data.layoutMode);
+          }
+          if (data.fontSize !== undefined) {
+            setFontSize(data.fontSize);
+            localStorage.setItem(`${baseKey}_font_size`, data.fontSize);
+          }
         }
       },
       (err) => {
@@ -193,6 +244,12 @@ export default function App() {
       setProfileNickname(localStorage.getItem(`${baseKey}_profile_nickname`) || (user ? '' : 'Guest Contributor'));
       setProfileRole(localStorage.getItem(`${baseKey}_profile_role`) || (user ? 'Workspace Coordinator' : 'Workspace Observer'));
       setProfileStation(localStorage.getItem(`${baseKey}_profile_station`) || (user ? 'Primary Hub No. 1' : 'Public Reading Desk'));
+      setWorkspaceName(localStorage.getItem(`${baseKey}_workspace_name`) || 'SmartTask');
+      setWorkspaceAvatar(localStorage.getItem(`${baseKey}_workspace_avatar`) || '📝');
+      setDefaultTaskView(localStorage.getItem(`${baseKey}_default_task_view`) || 'agenda');
+      setDefaultReminderTime(Number(localStorage.getItem(`${baseKey}_default_reminder_time`)) || 60);
+      setLayoutMode((localStorage.getItem(`${baseKey}_layout_mode`) as 'compact' | 'spacious') || 'spacious');
+      setFontSize((localStorage.getItem(`${baseKey}_font_size`) as 'small' | 'default' | 'large') || 'default');
     };
     window.addEventListener('smarttask_settings_updated', handleSettingsUpdate);
     return () => window.removeEventListener('smarttask_settings_updated', handleSettingsUpdate);
@@ -312,6 +369,22 @@ export default function App() {
     reminderTime: Date | null;
     recurrence?: RecurrenceSettings | null;
     project?: string | null;
+    subtasks?: { id: string; title: string; completed: boolean }[];
+    estimatedTime?: number;
+    notes?: string;
+    amount?: number;
+    paymentStatus?: 'pending' | 'paid';
+    recurringBill?: boolean;
+    habitType?: string;
+    streak?: number;
+    shoppingQuantity?: number;
+    shoppingStore?: string;
+    shoppingCost?: number;
+    subject?: string;
+    studyDuration?: number;
+    resourceLink?: string;
+    dependency?: string;
+    estimatedEffort?: string;
   }) => {
     if (!user) {
       setIsAuthModalOpen(true);
@@ -323,6 +396,12 @@ export default function App() {
     try {
       const dueDateTimestamp = Timestamp.fromDate(data.dueDate);
       const reminderTimeTimestamp = data.reminderTime ? Timestamp.fromDate(data.reminderTime) : null;
+
+      const extraFields = [
+        'subtasks', 'estimatedTime', 'notes', 'amount', 'paymentStatus', 'recurringBill',
+        'habitType', 'streak', 'shoppingQuantity', 'shoppingStore', 'shoppingCost',
+        'subject', 'studyDuration', 'resourceLink', 'dependency', 'estimatedEffort'
+      ];
 
       if (taskToEdit) {
         // UPDATE action (Requires full state to pass rule validation helper)
@@ -353,6 +432,13 @@ export default function App() {
           updatePayload.project = data.project;
         }
 
+        // Copy extra fields if they are defined
+        extraFields.forEach(f => {
+          if ((data as any)[f] !== undefined && (data as any)[f] !== null) {
+            updatePayload[f] = (data as any)[f];
+          }
+        });
+
         await updateDoc(docRef, updatePayload);
         triggerToast('Task document successfully updated.');
       } else {
@@ -381,6 +467,13 @@ export default function App() {
         if (data.project !== undefined) {
           createPayload.project = data.project;
         }
+
+        // Copy extra fields if they are defined
+        extraFields.forEach(f => {
+          if ((data as any)[f] !== undefined && (data as any)[f] !== null) {
+            createPayload[f] = (data as any)[f];
+          }
+        });
 
         await addDoc(collRef, createPayload);
         triggerToast('New priority task successfully registered.');
@@ -547,7 +640,7 @@ export default function App() {
   });
 
   return (
-    <div className={`theme-${theme} ${darkMode ? 'dark-themed' : 'light-themed'} min-h-screen bg-[#F9F8F6] text-[#1A1A1A] font-sans selection:bg-[#C2410C]/25 pb-16 transition-colors duration-300`}>
+    <div className={`theme-${theme} ${darkMode ? 'dark-themed' : 'light-themed'} font-size-${fontSize} layout-${layoutMode} min-h-screen bg-[#F9F8F6] text-[#1A1A1A] font-sans selection:bg-[#C2410C]/25 pb-16 transition-colors duration-300`}>
       {/* Dynamic Alert Banner */}
       <AnimatePresence>
         {toast && (
@@ -580,7 +673,10 @@ export default function App() {
         <header className="flex flex-col md:flex-row justify-between items-baseline border-b border-[#1A1A1A] pb-6 mb-8 gap-4 w-full">
           <div onClick={() => setCurrentView('agenda')} className="cursor-pointer select-none group">
             <h1 className="text-xs tracking-[0.3em] font-bold uppercase mb-2 text-[#C2410C] group-hover:text-[#1A1A1A] transition-colors font-sans">The Daily Standard</h1>
-            <div className="text-6xl md:text-7xl font-serif italic leading-none font-semibold group-hover:opacity-85 transition-opacity">SmartTask</div>
+            <div className="text-5xl md:text-6xl font-serif italic leading-none font-semibold group-hover:opacity-85 transition-opacity flex items-center gap-3">
+              <span>{workspaceAvatar}</span>
+              <span>{workspaceName}</span>
+            </div>
           </div>
           
           <div className="flex flex-col md:text-right items-start md:items-end gap-2 w-full md:w-auto">

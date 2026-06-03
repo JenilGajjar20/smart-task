@@ -27,6 +27,24 @@ export interface Task {
   project?: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  // Extra fields added in SmartTask update
+  subtasks?: { id: string; title: string; completed: boolean }[];
+  estimatedTime?: number; // hours
+  notes?: string;
+  // Category-specific properties
+  amount?: number;
+  paymentStatus?: 'pending' | 'paid';
+  recurringBill?: boolean;
+  habitType?: string;
+  streak?: number;
+  shoppingQuantity?: number;
+  shoppingStore?: string;
+  shoppingCost?: number;
+  subject?: string;
+  studyDuration?: number;
+  resourceLink?: string;
+  dependency?: string;
+  estimatedEffort?: string;
 }
 
 export enum OperationType {

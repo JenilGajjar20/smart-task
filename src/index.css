@@ -543,3 +543,590 @@
   background-color: rgba(181, 128, 85, 0.05) !important;
 }
 
+/* ==========================================================================
+   NEW WORKSPACE THEMES (LIGHT & DARK VARIATIONS)
+   ========================================================================== */
+
+/* --- 5. NORDIC CALM THEME --- */
+.theme-nordic.light-themed {
+  background-color: #F0F4F6 !important;
+  color: #2C3A41 !important;
+}
+.theme-nordic.dark-themed {
+  background-color: #1C252C !important;
+  color: #ECEFF1 !important;
+}
+.theme-nordic.light-themed .bg-white,
+.theme-nordic.light-themed .bg-\[\#F9F8F6\] {
+  background-color: #FFFFFF !important;
+  color: #2C3A41 !important;
+}
+.theme-nordic.dark-themed .bg-white,
+.theme-nordic.dark-themed .bg-\[\#F9F8F6\] {
+  background-color: #242E35 !important;
+  color: #ECEFF1 !important;
+}
+.theme-nordic.light-themed .bg-\[\#F4F3EF\] {
+  background-color: #E4ECF0 !important;
+}
+.theme-nordic.dark-themed .bg-\[\#F4F3EF\] {
+  background-color: #2C3841 !important;
+}
+.theme-nordic.light-themed .text-\[\#1A1A1A\] {
+  color: #2C3A41 !important;
+}
+.theme-nordic.dark-themed .text-\[\#1A1A1A\] {
+  color: #ECEFF1 !important;
+}
+.theme-nordic.light-themed .text-\[\#C2410C\] {
+  color: #3D758F !important;
+}
+.theme-nordic.dark-themed .text-\[\#C2410C\] {
+  color: #569AB8 !important;
+}
+.theme-nordic.light-themed .bg-\[\#C2410C\] {
+  background-color: #3D758F !important;
+  color: #FFFFFF !important;
+}
+.theme-nordic.dark-themed .bg-\[\#C2410C\] {
+  background-color: #569AB8 !important;
+  color: #1C252C !important;
+}
+.theme-nordic.light-themed .border-\[\#1A1A1A\] {
+  border-color: #A2B5CD !important;
+}
+.theme-nordic.dark-themed .border-\[\#1A1A1A\] {
+  border-color: #43525D !important;
+}
+.theme-nordic.light-themed .border-[#C2410C],
+.theme-nordic.light-themed .border-\[\#C2410C\] {
+  border-color: #3D758F !important;
+}
+.theme-nordic.dark-themed .border-[#C2410C],
+.theme-nordic.dark-themed .border-\[\#C2410C\] {
+  border-color: #569AB8 !important;
+}
+.theme-nordic.light-themed .bg-\[\#C2410C\]\/5 {
+  background-color: rgba(61, 117, 143, 0.08) !important;
+}
+.theme-nordic.dark-themed .bg-\[\#C2410C\]\/5 {
+  background-color: rgba(86, 154, 184, 0.08) !important;
+}
+
+/* --- 6. CYBER NEON THEME --- */
+.theme-cyberneon.light-themed {
+  background-color: #FAF8FC !important;
+  color: #1A002C !important;
+}
+.theme-cyberneon.dark-themed {
+  background-color: #09030E !important;
+  color: #EAD8FF !important;
+}
+.theme-cyberneon.light-themed .bg-white,
+.theme-cyberneon.light-themed .bg-\[\#F9F8F6\] {
+  background-color: #FFFFFF !important;
+  border-color: #D3B3FF !important;
+  color: #1A002C !important;
+}
+.theme-cyberneon.dark-themed .bg-white,
+.theme-cyberneon.dark-themed .bg-\[\#F9F8F6\] {
+  background-color: #12091B !important;
+  border-color: #BD00FF !important;
+  color: #EAD8FF !important;
+  box-shadow: 0 0 10px rgba(189, 0, 255, 0.15) !important;
+}
+.theme-cyberneon.light-themed .bg-\[\#F4F3EF\] {
+  background-color: #F2E8FF !important;
+}
+.theme-cyberneon.dark-themed .bg-\[\#F4F3EF\] {
+  background-color: #1A0C27 !important;
+}
+.theme-cyberneon.light-themed .text-\[\#1A1A1A\] {
+  color: #5C00AD !important;
+}
+.theme-cyberneon.dark-themed .text-\[\#1A1A1A\] {
+  color: #00FFCC !important;
+  text-shadow: 0 0 5px rgba(0, 255, 204, 0.4) !important;
+}
+.theme-cyberneon.light-themed .text-\[\#C2410C\] {
+  color: #8F00FF !important;
+}
+.theme-cyberneon.dark-themed .text-\[\#C2410C\] {
+  color: #FF007A !important;
+  text-shadow: 0 0 5px rgba(255, 0, 122, 0.4) !important;
+}
+.theme-cyberneon.light-themed .bg-\[\#C2410C\] {
+  background-color: #8F00FF !important;
+  color: #FFFFFF !important;
+}
+.theme-cyberneon.dark-themed .bg-\[\#C2410C\] {
+  background-color: #FF007A !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 0 12px #FF007A !important;
+}
+.theme-cyberneon.light-themed .border-\[\#1A1A1A\] {
+  border-color: #D3B3FF !important;
+}
+.theme-cyberneon.dark-themed .border-\[\#1A1A1A\] {
+  border-color: #BD00FF !important;
+}
+.theme-cyberneon.light-themed .border-[#C2410C],
+.theme-cyberneon.light-themed .border-\[\#C2410C\] {
+  border-color: #8F00FF !important;
+}
+.theme-cyberneon.dark-themed .border-[#C2410C],
+.theme-cyberneon.dark-themed .border-\[\#C2410C\] {
+  border-color: #00FFCC !important;
+}
+.theme-cyberneon.light-themed .bg-red-500\/5 {
+  background-color: rgba(143, 0, 255, 0.05) !important;
+}
+.theme-cyberneon.dark-themed .bg-red-500\/5 {
+  background-color: rgba(255, 0, 122, 0.08) !important;
+}
+
+/* --- 7. LUXURY PLANNER THEME --- */
+.theme-luxury.light-themed {
+  background-color: #FDFCFA !important;
+  color: #2C0A11 !important;
+}
+.theme-luxury.dark-themed {
+  background-color: #1B0611 !important;
+  color: #F5E8E0 !important;
+}
+.theme-luxury.light-themed .bg-white,
+.theme-luxury.light-themed .bg-\[\#F9F8F6\] {
+  background-color: #FAF0E6 !important;
+  border-color: #D4AF37 !important;
+  color: #2C0A11 !important;
+}
+.theme-luxury.dark-themed .bg-white,
+.theme-luxury.dark-themed .bg-\[\#F9F8F6\] {
+  background-color: #2A0E1F !important;
+  border-color: #E5C158 !important;
+  color: #F5E8E0 !important;
+}
+.theme-luxury.light-themed .bg-\[\#F4F3EF\] {
+  background-color: #F3E8DC !important;
+}
+.theme-luxury.dark-themed .bg-\[\#F4F3EF\] {
+  background-color: #38152B !important;
+}
+.theme-luxury.light-themed .text-\[\#1A1A1A\] {
+  color: #2C0A11 !important;
+}
+.theme-luxury.dark-themed .text-\[\#1A1A1A\] {
+  color: #F5E8E0 !important;
+}
+.theme-luxury.light-themed .text-\[\#C2410C\] {
+  color: #B8860B !important;
+}
+.theme-luxury.dark-themed .text-\[\#C2410C\] {
+  color: #E5C158 !important;
+}
+.theme-luxury.light-themed .bg-\[\#C2410C\] {
+  background-color: #D4AF37 !important;
+  color: #2C0A11 !important;
+  font-weight: 700 !important;
+}
+.theme-luxury.dark-themed .bg-\[\#C2410C\] {
+  background-color: #E5C158 !important;
+  color: #1B0611 !important;
+  font-weight: 700 !important;
+}
+.theme-luxury.light-themed .border-\[\#1A1A1A\] {
+  border-color: #D4AF37 !important;
+}
+.theme-luxury.dark-themed .border-\[\#1A1A1A\] {
+  border-color: #6C446F !important;
+}
+.theme-luxury.light-themed .border-[#C2410C],
+.theme-luxury.light-themed .border-\[\#C2410C\] {
+  border-color: #D4AF37 !important;
+}
+.theme-luxury.dark-themed .border-[#C2410C],
+.theme-luxury.dark-themed .border-\[\#C2410C\] {
+  border-color: #E5C158 !important;
+}
+
+/* Ensure Serif Headers for Luxury */
+.theme-luxury h1, .theme-luxury h2, .theme-luxury h3, .theme-luxury h4, .theme-luxury .font-serif {
+  font-family: var(--font-display) !important;
+}
+
+/* --- 8. FINANCE LEDGER THEME --- */
+.theme-finance.light-themed {
+  background-color: #F3F6F4 !important;
+  color: #1A281E !important;
+  font-family: var(--font-mono) !important;
+}
+.theme-finance.dark-themed {
+  background-color: #0E120E !important;
+  color: #C7D4C7 !important;
+  font-family: var(--font-mono) !important;
+}
+.theme-finance.light-themed .bg-white,
+.theme-finance.light-themed .bg-\[\#F9F8F6\] {
+  background-color: #FFFFFF !important;
+  border-color: #8C9F92 !important;
+  color: #1A281E !important;
+}
+.theme-finance.dark-themed .bg-white,
+.theme-finance.dark-themed .bg-\[\#F9F8F6\] {
+  background-color: #161F18 !important;
+  border-color: #3F5244 !important;
+  color: #C7D4C7 !important;
+}
+.theme-finance.light-themed .bg-\[\#F4F3EF\] {
+  background-color: #E2E8E2 !important;
+}
+.theme-finance.dark-themed .bg-\[\#F4F3EF\] {
+  background-color: #1F2A21 !important;
+}
+.theme-finance.light-themed .text-\[\#1A1A1A\] {
+  color: #10B981 !important;
+}
+.theme-finance.dark-themed .text-\[\#1A1A1A\] {
+  color: #34D399 !important;
+}
+.theme-finance.light-themed .text-\[\#C2410C\] {
+  color: #10B981 !important;
+}
+.theme-finance.dark-themed .text-\[\#C2410C\] {
+  color: #34D399 !important;
+}
+.theme-finance.light-themed .bg-\[\#C2410C\] {
+  background-color: #10B981 !important;
+  color: #FFFFFF !important;
+}
+.theme-finance.dark-themed .bg-\[\#C2410C\] {
+  background-color: #34D399 !important;
+  color: #0E120E !important;
+}
+.theme-finance.light-themed .border-\[\#1A1A1A\] {
+  border-color: #8C9F92 !important;
+}
+.theme-finance.dark-themed .border-\[\#1A1A1A\] {
+  border-color: #3F5244 !important;
+}
+.theme-finance.light-themed .border-[#C2410C],
+.theme-finance.light-themed .border-\[\#C2410C\] {
+  border-color: #10B981 !important;
+}
+.theme-finance.dark-themed .border-[#C2410C],
+.theme-finance.dark-themed .border-\[\#C2410C\] {
+  border-color: #34D399 !important;
+}
+.theme-finance select, .theme-finance input, .theme-finance textarea, .theme-finance button {
+  font-family: var(--font-mono) !important;
+  border-radius: 0px !important;
+}
+
+/* Force mono everywhere in Finance */
+.theme-finance h1, .theme-finance h2, .theme-finance h3, .theme-finance h4, .theme-finance p, .theme-finance span, .theme-finance div, .theme-finance label {
+  font-family: var(--font-mono) !important;
+}
+
+/* --- 9. WELLNESS GARDEN THEME --- */
+.theme-wellness.light-themed {
+  background-color: #F4F0EB !important;
+  color: #243324 !important;
+}
+.theme-wellness.dark-themed {
+  background-color: #161B16 !important;
+  color: #E1ECE1 !important;
+}
+.theme-wellness.light-themed .bg-white,
+.theme-wellness.light-themed .bg-\[\#F9F8F6\] {
+  background-color: #FAF8F5 !important;
+  color: #243324 !important;
+  border-radius: 8px !important;
+}
+.theme-wellness.dark-themed .bg-white,
+.theme-wellness.dark-themed .bg-\[\#F9F8F6\] {
+  background-color: #1E251E !important;
+  color: #E1ECE1 !important;
+  border-radius: 8px !important;
+}
+.theme-wellness.light-themed .bg-\[\#F4F3EF\] {
+  background-color: #E6E1D8 !important;
+}
+.theme-wellness.dark-themed .bg-\[\#F4F3EF\] {
+  background-color: #262E28 !important;
+}
+.theme-wellness.light-themed .text-\[\#1A1A1A\] {
+  color: #243324 !important;
+}
+.theme-wellness.dark-themed .text-\[\#1A1A1A\] {
+  color: #E1ECE1 !important;
+}
+.theme-wellness.light-themed .text-\[\#C2410C\] {
+  color: #518D60 !important;
+}
+.theme-wellness.dark-themed .text-\[\#C2410C\] {
+  color: #7BC48C !important;
+}
+.theme-wellness.light-themed .bg-\[\#C2410C\] {
+  background-image: none !important;
+  background-color: #518D60 !important;
+  color: #FFFFFF !important;
+}
+.theme-wellness.dark-themed .bg-\[\#C2410C\] {
+  background-image: none !important;
+  background-color: #7BC48C !important;
+  color: #161B16 !important;
+}
+.theme-wellness.light-themed .border-\[\#1A1A1A\] {
+  border-color: #C0C8C0 !important;
+}
+.theme-wellness.dark-themed .border-\[\#1A1A1A\] {
+  border-color: #3A463A !important;
+}
+.theme-wellness select, .theme-wellness input, .theme-wellness textarea, .theme-wellness button, .theme-wellness div {
+  border-radius: 6px !important;
+}
+
+/* --- 10. PAPER DESK THEME --- */
+.theme-paperdesk.light-themed {
+  background-color: #FAF4E5 !important;
+  color: #0B2545 !important;
+}
+.theme-paperdesk.dark-themed {
+  background-color: #181410 !important;
+  color: #ECCFAD !important;
+}
+.theme-paperdesk.light-themed .bg-white,
+.theme-paperdesk.light-themed .bg-\[\#F9F8F6\] {
+  background-color: #FCF9F2 !important;
+  color: #0B2545 !important;
+  border-bottom: 2px solid #0B2545 !important;
+}
+.theme-paperdesk.dark-themed .bg-white,
+.theme-paperdesk.dark-themed .bg-\[\#F9F8F6\] {
+  background-color: #241D17 !important;
+  color: #ECCFAD !important;
+  border-bottom: 2px solid #5C4731 !important;
+}
+.theme-paperdesk.light-themed .bg-\[\#F4F3EF\] {
+  background-color: #EFE7D4 !important;
+}
+.theme-paperdesk.dark-themed .bg-\[\#F4F3EF\] {
+  background-color: #2F261F !important;
+}
+.theme-paperdesk.light-themed .text-\[\#C2410C\] {
+  color: #134074 !important;
+}
+.theme-paperdesk.dark-themed .text-\[\#C2410C\] {
+  color: #E79E53 !important;
+}
+.theme-paperdesk.light-themed .bg-\[\#C2410C\] {
+  background-color: #134074 !important;
+  color: #FAF4E5 !important;
+}
+.theme-paperdesk.dark-themed .bg-\[\#C2410C\] {
+  background-color: #E79E53 !important;
+  color: #181410 !important;
+  font-weight: 700 !important;
+}
+.theme-paperdesk.light-themed .border-\[\#1A1A1A\] {
+  border-color: #0B2545 !important;
+}
+.theme-paperdesk.dark-themed .border-\[\#1A1A1A\] {
+  border-color: #5C4731 !important;
+}
+
+/* --- 11. MONOCHROME BRUTALIST THEME --- */
+.theme-brutalist {
+  --brutalist-shadow: 4px 4px 0px 0px #000000;
+  --brutalist-shadow-dark: 4px 4px 0px 0px #FFFFFF;
+}
+.theme-brutalist.light-themed {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+}
+.theme-brutalist.dark-themed {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+.theme-brutalist .bg-white,
+.theme-brutalist .bg-\[\#F9F8F6\],
+.theme-brutalist .bg-\[\#F4F3EF\] {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+  border: 3px solid #000000 !important;
+  box-shadow: var(--brutalist-shadow) !important;
+}
+.theme-brutalist.dark-themed .bg-white,
+.theme-brutalist.dark-themed .bg-\[\#F9F8F6\],
+.theme-brutalist.dark-themed .bg-\[\#F4F3EF\] {
+  background-color: #161616 !important;
+  color: #FFFFFF !important;
+  border: 3px solid #FFFFFF !important;
+  box-shadow: var(--brutalist-shadow-dark) !important;
+}
+.theme-brutalist .border-\[\#1A1A1A\],
+.theme-brutalist .border-b,
+.theme-brutalist .border-t,
+.theme-brutalist .border {
+  border: 3px solid #000000 !important;
+}
+.theme-brutalist.dark-themed .border-\[\#1A1A1A\],
+.theme-brutalist.dark-themed .border-b,
+.theme-brutalist.dark-themed .border-t,
+.theme-brutalist.dark-themed .border {
+  border: 3px solid #FFFFFF !important;
+}
+.theme-brutalist .text-\[\#C2410C\] {
+  color: #000000 !important;
+  text-decoration: underline !important;
+  font-weight: 800 !important;
+}
+.theme-brutalist.dark-themed .text-\[\#C2410C\] {
+  color: #FFFFFF !important;
+  text-decoration: underline !important;
+  font-weight: 800 !important;
+}
+.theme-brutalist .bg-\[\#C2410C\] {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 3px solid #000000 !important;
+}
+.theme-brutalist.dark-themed .bg-\[\#C2410C\] {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+  border: 3px solid #FFFFFF !important;
+}
+.theme-brutalist select, .theme-brutalist input, .theme-brutalist textarea {
+  border: 3px solid #000000 !important;
+  border-radius: 0px !important;
+}
+.theme-brutalist.dark-themed select, .theme-brutalist.dark-themed input, .theme-brutalist.dark-themed textarea {
+  border: 3px solid #FFFFFF !important;
+}
+
+/* --- 12. GLASSMORPHISM AURORA THEME --- */
+.theme-glassmorphism.light-themed {
+  background: linear-gradient(135deg, #E8EDF9 0%, #F5F3FF 50%, #E0F2FE 100%) !important;
+  color: #0F172A !important;
+}
+.theme-glassmorphism.dark-themed {
+  background: linear-gradient(135deg, #030712 0%, #0F0926 50%, #03120E 100%) !important;
+  color: #F8FAFC !important;
+}
+.theme-glassmorphism.light-themed .bg-white,
+.theme-glassmorphism.light-themed .bg-\[\#F9F8F6\] {
+  background-color: rgba(255, 255, 255, 0.45) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  color: #0F172A !important;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05) !important;
+  border-radius: 12px !important;
+}
+.theme-glassmorphism.dark-themed .bg-white,
+.theme-glassmorphism.dark-themed .bg-\[\#F9F8F6\] {
+  background-color: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #F8FAFC !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+  border-radius: 12px !important;
+}
+.theme-glassmorphism.light-themed .bg-\[\#F4F3EF\] {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  border-radius: 8px !important;
+}
+.theme-glassmorphism.dark-themed .bg-\[\#F4F3EF\] {
+  background-color: rgba(15, 23, 42, 0.35) !important;
+  border-radius: 8px !important;
+}
+.theme-glassmorphism.light-themed .text-\[\#1A1A1A\] {
+  color: #4F46E5 !important;
+}
+.theme-glassmorphism.dark-themed .text-\[\#1A1A1A\] {
+  color: #818CF8 !important;
+}
+.theme-glassmorphism.light-themed .text-\[\#C2410C\] {
+  color: #4F46E5 !important;
+}
+.theme-glassmorphism.dark-themed .text-\[\#C2410C\] {
+  color: #818CF8 !important;
+}
+.theme-glassmorphism.light-themed .bg-\[\#C2410C\] {
+  background-color: #4F46E5 !important;
+  color: #FFFFFF !important;
+  border-radius: 8px !important;
+}
+.theme-glassmorphism.dark-themed .bg-\[\#C2410C\] {
+  background-color: #818CF8 !important;
+  color: #030712 !important;
+  border-radius: 8px !important;
+}
+.theme-glassmorphism.light-themed .border-\[\#1A1A1A\] {
+  border-color: rgba(15, 23, 42, 0.15) !important;
+}
+.theme-glassmorphism.dark-themed .border-\[\#1A1A1A\] {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+.theme-glassmorphism select, .theme-glassmorphism input, .theme-glassmorphism textarea, .theme-glassmorphism button, .theme-glassmorphism div {
+  border-radius: 8px !important;
+}
+
+/* ==========================================================================
+   PERSONALIZATION SCALE & DENSITY OVERRIDES
+   ========================================================================== */
+
+/* Font Size Scales */
+.font-size-small {
+  font-size: 11px !important;
+}
+.font-size-small h1, .font-size-small .text-4xl { font-size: 1.6rem !important; }
+.font-size-small h2, .font-size-small .text-3xl { font-size: 1.25rem !important; }
+.font-size-small h3, .font-size-small .text-2xl { font-size: 1.1rem !important; }
+.font-size-small p, .font-size-small select, .font-size-small button, .font-size-small input, .font-size-small span, .font-size-small label {
+  font-size: 10px !important;
+}
+
+.font-size-large {
+  font-size: 15px !important;
+}
+.font-size-large h1, .font-size-large .text-4xl { font-size: 2.8rem !important; }
+.font-size-large h2, .font-size-large .text-3xl { font-size: 2.1rem !important; }
+.font-size-large h3, .font-size-large .text-2xl { font-size: 1.6rem !important; }
+.font-size-large p, .font-size-large select, .font-size-large button, .font-size-large input, .font-size-large span, .font-size-large label {
+  font-size: 14px !important;
+}
+
+/* Compact Layout Densities */
+.layout-compact .p-6, .layout-compact .p-5, .layout-compact p-5, .layout-compact p-6 {
+  padding: 0.75rem !important;
+}
+.layout-compact .p-4 {
+  padding: 0.5rem !important;
+}
+.layout-compact .pt-6 {
+  padding-top: 0.75rem !important;
+}
+.layout-compact .pb-6 {
+  padding-bottom: 0.75rem !important;
+}
+.layout-compact .space-y-8 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 1rem !important;
+}
+.layout-compact .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0.75rem !important;
+}
+.layout-compact .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0.5rem !important;
+}
+.layout-compact .py-3 {
+  padding-top: 0.35rem !important;
+  padding-bottom: 0.35rem !important;
+}
+.layout-compact .h-16 {
+  height: 3.2rem !important;
+}
+
+
+

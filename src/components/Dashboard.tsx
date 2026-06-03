@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
 import { CheckCircle2, Clock, AlertTriangle, ListChecks, Calendar, PieChart, Sparkles } from 'lucide-react';
 import { Task } from '../types';
@@ -20,6 +20,47 @@ export default function Dashboard({ tasks, onSelectTab, activeTab }: DashboardPr
     const due = t.dueDate.toDate();
     return due < now;
   }).length;
+
+  // Today Command Center Intelligence calculations
+  const suggestedFocusTask = useMemo(() => {
+    const incomplete = tasks.filter(t => !t.completed);
+    const high = incomplete.filter(t => t.priority === 'high');
+    if (high.length > 0) return high[0];
+    const med = incomplete.filter(t => t.priority === 'medium');
+    if (med.length > 0) return med[0];
+    return incomplete[0] || null;
+  }, [tasks]);
+
+  const overdueTasksList = useMemo(() => {
+    return tasks.filter(t => {
+      if (t.completed) return false;
+      const due = t.dueDate.toDate();
+      return due < now;
+    });
+  }, [tasks, now]);
+
+  const upcomingDeadlinesList = useMemo(() => {
+    return tasks.filter(t => {
+      if (t.completed) return false;
+      const due = t.dueDate.toDate();
+      const diffMs = due.getTime() - now.getTime();
+      const diffDays = diffMs / (1000 * 60 * 60 * 24);
+      return diffDays >= 0 && diffDays <= 3;
+    });
+  }, [tasks, now]);
+
+  const totalEstimatedWorkload = useMemo(() => {
+    const incomplete = tasks.filter(t => !t.completed);
+    let totalHours = 0;
+    incomplete.forEach(t => {
+      if (t.estimatedTime !== undefined) {
+        totalHours += Number(t.estimatedTime);
+      } else {
+        totalHours += 1.0; // Default budget weight per pending task block
+      }
+    });
+    return totalHours;
+  }, [tasks]);
 
   // Completion Percentage
   const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -197,11 +238,11 @@ export default function Dashboard({ tasks, onSelectTab, activeTab }: DashboardPr
               transition={{ delay: idx * 0.05 }}
               whileHover={{ scale: 1.01 }}
             >
-              <div className="flex justify-between items-center w-full mb-3">
-                <span className={`text-[10px] font-bold tracking-[0.15em] uppercase ${isActive ? 'text-slate-300' : 'text-slate-500'}`}>
+              <div className="flex justify-between items-start gap-2 w-full mb-3">
+                <span className={`text-[10px] md:text-xs font-bold tracking-[0.15em] uppercase break-words leading-tight ${isActive ? 'text-slate-300' : 'text-slate-500'}`}>
                   {card.title}
                 </span>
-                <div className={`p-1.5 ${
+                <div className={`p-1.5 shrink-0 ${
                   isActive 
                     ? 'text-[#F9F8F6] bg-slate-800' 
                     : isOverdueAlert 
@@ -211,11 +252,11 @@ export default function Dashboard({ tasks, onSelectTab, activeTab }: DashboardPr
                   <Icon className="h-4 w-4" />
                 </div>
               </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-serif font-semibold leading-none">
+              <div className="flex items-baseline gap-1 flex-wrap">
+                <span className="text-3xl md:text-4xl font-serif font-semibold leading-none">
                   {String(card.value).padStart(2, '0')}
                 </span>
-                <span className={`text-[10px] uppercase font-bold tracking-wider ${isActive ? 'text-slate-400' : 'text-slate-400'}`}>
+                <span className={`text-[9px] uppercase font-bold tracking-wider ${isActive ? 'text-slate-400' : 'text-slate-400'}`}>
                   item{card.value !== 1 ? 's' : ''}
                 </span>
               </div>
@@ -356,6 +397,141 @@ export default function Dashboard({ tasks, onSelectTab, activeTab }: DashboardPr
           )}
         </div>
       </div>
+
+      {/* TODAY COMMAND CENTER — WORKSPACE INTELLIGENCE BRIEF */}
+      <motion.div 
+        className="bg-[#F4F3EF] border border-[#1A1A1A] p-6 rounded-none space-y-6"
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <div className="flex items-center justify-between border-b border-[#1A1A1A] pb-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-[#C2410C]" />
+            <span className="font-serif italic text-xl font-bold text-[#1A1A1A]">
+              Today's Workspace Command Briefing
+            </span>
+          </div>
+          <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-slate-500 bg-white border border-[#1A1A1A]/10 px-2 py-0.5">
+            Command Center Active
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Column 1: Suggested Priority Target & Workload Index */}
+          <div className="space-y-4">
+            <span className="block text-[10px] font-bold text-[#C2410C] uppercase tracking-[0.2em] font-mono">
+              ⚡ Focus Suggestion & Load
+            </span>
+            
+            {suggestedFocusTask ? (
+              <div className="bg-white p-4 border border-[#1A1A1A]/10 space-y-2">
+                <span className="block text-[8px] font-bold uppercase tracking-wide text-slate-400 font-mono">
+                  SUGGESTED NEXT STEP
+                </span>
+                <h4 className="font-serif italic text-base font-bold text-[#1A1A1A]">
+                  {suggestedFocusTask.title}
+                </h4>
+                <div className="flex items-center gap-2 text-[9px] font-mono text-slate-500">
+                  <span>Folder: {suggestedFocusTask.category}</span>
+                  <span>·</span>
+                  <span className="text-red-700 bg-red-50 px-1 font-bold">{suggestedFocusTask.priority}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-slate-50 border border-slate-200 text-center text-xs text-slate-400 italic">
+                No incomplete tasks available for focus guidance.
+              </div>
+            )}
+
+            {/* Workload Index */}
+            <div className="bg-[#1A1A1A] text-white p-4 border border-[#1A1A1A] space-y-1">
+              <span className="block text-[8px] font-bold uppercase tracking-widest text-[#C2410C] font-mono">
+                WORKLOAD INTENSITY
+              </span>
+              <div className="flex justify-between items-baseline">
+                <span className="text-3xl font-mono font-bold tracking-tight text-white">
+                  {totalEstimatedWorkload.toFixed(1)}h
+                </span>
+                <span className="text-[9px] text-[#F9F8F6]/60 uppercase font-bold tracking-wider font-mono">
+                  Est. workspace burden
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-400 font-serif italic pt-1 leading-normal">
+                Based on active user task estimates (unspecified items assigned basic 1h credit).
+              </p>
+            </div>
+          </div>
+
+          {/* Column 2: Overdue Action Intervention Items */}
+          <div className="space-y-4">
+            <span className="block text-[10px] font-bold text-slate-700 uppercase tracking-[0.2em] font-mono">
+              🚨 Overdue Action Items
+            </span>
+            
+            <div className="space-y-2 max-h-[190px] overflow-y-auto pr-1">
+              {overdueTasksList.length > 0 ? (
+                overdueTasksList.slice(0, 4).map(t => (
+                  <div key={t.id} className="bg-red-50/50 p-3 border border-[#C2410C]/20 flex flex-col justify-between">
+                    <h5 className="font-serif text-xs font-bold text-[#1A1A1A] truncate">{t.title}</h5>
+                    <div className="flex justify-between items-center text-[8px] font-mono text-slate-600 mt-1">
+                      <span>Folder: {t.category}</span>
+                      <span className="text-[#C2410C] font-bold uppercase">OUT OF TIME</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 bg-emerald-50/40 border border-emerald-900/10 text-center text-xs text-slate-500 font-serif italic">
+                  Excellent! No overdue action elements are active.
+                </div>
+              )}
+              {overdueTasksList.length > 4 && (
+                <span className="block text-[8px] font-mono text-center text-slate-400 uppercase font-bold">
+                  + {overdueTasksList.length - 4} other overdue items
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Column 3: Upcoming Deadlines */}
+          <div className="space-y-4">
+            <span className="block text-[10px] font-bold text-slate-700 uppercase tracking-[0.2em] font-mono">
+              📅 Upcoming Deadlines
+            </span>
+            
+            <div className="space-y-2 max-h-[190px] overflow-y-auto pr-1">
+              {upcomingDeadlinesList.length > 0 ? (
+                upcomingDeadlinesList.slice(0, 4).map(t => {
+                  const daysLeft = Math.ceil((t.dueDate.toDate().getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                  return (
+                    <div key={t.id} className="bg-white p-3 border border-[#1A1A1A]/10 flex flex-col justify-between">
+                      <h5 className="font-serif text-xs font-bold text-[#1A1A1A] truncate">{t.title}</h5>
+                      <div className="flex justify-between items-center text-[8px] font-mono text-slate-500 mt-1">
+                        <span>Folder: {t.category}</span>
+                        <span className="font-bold text-orange-850">
+                          {daysLeft === 0 ? "Today" : daysLeft === 1 ? "Tomorrow" : `In ${daysLeft} Days`}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="p-4 bg-slate-50 border border-[#1A1A1A]/10 text-center text-xs text-slate-400 italic font-serif">
+                  No deadlines scheduled in the coming 72 hours.
+                </div>
+              )}
+              {upcomingDeadlinesList.length > 4 && (
+                <span className="block text-[8px] font-mono text-center text-slate-400 uppercase font-bold">
+                  + {upcomingDeadlinesList.length - 4} other upcoming deadlines
+                </span>
+              )}
+            </div>
+          </div>
+
+        </div>
+      </motion.div>
+
     </div>
   );
 }

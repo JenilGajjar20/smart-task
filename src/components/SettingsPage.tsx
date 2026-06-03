@@ -46,6 +46,26 @@ export default function SettingsPage({ onBack, triggerToast, tasks, user, onRequ
     return localStorage.getItem(`${baseKey}_desk_sounds`) !== 'false';
   });
 
+  // New Personalization parameters
+  const [workspaceName, setWorkspaceName] = useState<string>(() => {
+    return localStorage.getItem(`${baseKey}_workspace_name`) || 'SmartTask';
+  });
+  const [workspaceAvatar, setWorkspaceAvatar] = useState<string>(() => {
+    return localStorage.getItem(`${baseKey}_workspace_avatar`) || '📝';
+  });
+  const [defaultTaskView, setDefaultTaskView] = useState<string>(() => {
+    return localStorage.getItem(`${baseKey}_default_task_view`) || 'agenda';
+  });
+  const [defaultReminderTime, setDefaultReminderTime] = useState<number>(() => {
+    return Number(localStorage.getItem(`${baseKey}_default_reminder_time`)) || 60;
+  });
+  const [layoutMode, setLayoutMode] = useState<'compact' | 'spacious'>(() => {
+    return (localStorage.getItem(`${baseKey}_layout_mode`) as 'compact' | 'spacious') || 'spacious';
+  });
+  const [fontSize, setFontSize] = useState<'small' | 'default' | 'large'>(() => {
+    return (localStorage.getItem(`${baseKey}_font_size`) as 'small' | 'default' | 'large') || 'default';
+  });
+
   // Storage Stats (calculated dynamically from tasks list)
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter(t => t.completed).length;
@@ -69,6 +89,14 @@ export default function SettingsPage({ onBack, triggerToast, tasks, user, onRequ
     localStorage.setItem(`${baseKey}_default_priority`, defaultPriority);
     localStorage.setItem(`${baseKey}_time_format`, timeFormat);
     localStorage.setItem(`${baseKey}_desk_sounds`, String(deskSounds));
+
+    // Persist new personalization fields
+    localStorage.setItem(`${baseKey}_workspace_name`, workspaceName);
+    localStorage.setItem(`${baseKey}_workspace_avatar`, workspaceAvatar);
+    localStorage.setItem(`${baseKey}_default_task_view`, defaultTaskView);
+    localStorage.setItem(`${baseKey}_default_reminder_time`, String(defaultReminderTime));
+    localStorage.setItem(`${baseKey}_layout_mode`, layoutMode);
+    localStorage.setItem(`${baseKey}_font_size`, fontSize);
     
     // Custom post event to trigger updates across tabs/app instantly
     window.dispatchEvent(new Event('smarttask_settings_updated'));
@@ -86,6 +114,13 @@ export default function SettingsPage({ onBack, triggerToast, tasks, user, onRequ
           defaultPriority,
           timeFormat,
           deskSounds,
+          // Sync new personalization fields
+          workspaceName,
+          workspaceAvatar,
+          defaultTaskView,
+          defaultReminderTime,
+          layoutMode,
+          fontSize,
         });
         triggerToast('Workspace settings successfully synchronized to the cloud.');
       } catch (err: any) {
@@ -216,6 +251,14 @@ export default function SettingsPage({ onBack, triggerToast, tasks, user, onRequ
                 <option value="cosmic">Midnight Cosmic (Indigo Glow)</option>
                 <option value="botanical">Forest Botanical (Sage Greens & Gold)</option>
                 <option value="espresso">Espresso Roast (Warm Cream & Dark Chocolate)</option>
+                <option value="nordic">Nordic Calm (Minimal Blues & Polar Birch)</option>
+                <option value="cyberneon">Cyber Neon (Futuristic Purples & Glows)</option>
+                <option value="luxury">Luxury Planner (Royal Serifs & Golden Burgundy)</option>
+                <option value="finance">Finance Ledger (Strict Monospaced Accounting Ledger)</option>
+                <option value="wellness">Wellness Garden (Matcha Organic & Stone Pebble)</option>
+                <option value="paperdesk">Paper Desk (Antique Parchment & Fountain Ink)</option>
+                <option value="brutalist">Monochrome Brutalist (Stark Contrast & Hard Outlines)</option>
+                <option value="glassmorphism">Glassmorphism Aurora (Frosted Blur & Backdrop Gradients)</option>
               </select>
             </div>
 
@@ -288,6 +331,137 @@ export default function SettingsPage({ onBack, triggerToast, tasks, user, onRequ
                       placeholder="e.g. Primary Hub No. 1"
                       className="w-full px-3 py-1.5 text-xs border border-[#1A1A1A] rounded-none bg-white text-[#1A1A1A] font-serif outline-none"
                     />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Workspace Personalization Section */}
+            <div className="border border-[#1A1A1A]/20 bg-white p-4 space-y-4 rounded-none" id="workspace-personalization-container">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#C2410C] font-mono border-b border-[#1A1A1A]/10 pb-2">
+                Workspace Personalization
+              </h4>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Workspace Hub Name</label>
+                    <input
+                      type="text"
+                      value={workspaceName}
+                      onChange={(e) => setWorkspaceName(e.target.value)}
+                      placeholder="e.g. SmartTask"
+                      className="w-full px-3 py-1.5 text-xs border border-[#1A1A1A] rounded-none bg-white text-[#1A1A1A] font-serif outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Workspace Emblem / Avatar</label>
+                    <select
+                      value={workspaceAvatar}
+                      onChange={(e) => setWorkspaceAvatar(e.target.value)}
+                      className="w-full px-3 py-1.5 bg-white border border-[#1A1A1A] rounded-none outline-none text-[#1A1A1A] text-xs font-serif transition-colors cursor-pointer"
+                    >
+                      <option value="📝">📝 Notepad Ledger</option>
+                      <option value="🚀">🚀 Launch Pad</option>
+                      <option value="💡">💡 Idea Vault</option>
+                      <option value="💼">💼 Executive Desk</option>
+                      <option value="🛠️">🛠️ Project Bench</option>
+                      <option value="🏡">🏡 Sanctuary Hub</option>
+                      <option value="🎯">🎯 Precision Board</option>
+                      <option value="🌿">🌿 Organic Oasis</option>
+                      <option value="📊">📊 Capital Ledger</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Default Workspace View</label>
+                    <select
+                      value={defaultTaskView}
+                      onChange={(e) => setDefaultTaskView(e.target.value)}
+                      className="w-full px-3 py-1.5 bg-white border border-[#1A1A1A] rounded-none outline-none text-[#1A1A1A] text-xs font-serif transition-colors cursor-pointer"
+                    >
+                      <option value="agenda">Agenda Flat List</option>
+                      <option value="kanban">Kanban Columns</option>
+                      <option value="calendar">Monthly Calendar Grid</option>
+                      <option value="focus">Single Focal Point Tracker</option>
+                      <option value="category">Category-Grouped Tags</option>
+                      <option value="project">Workspace Book Folders</option>
+                      <option value="timeline">Chronological Timeline Track</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Default Alert / Reminder Offset</label>
+                    <select
+                      value={defaultReminderTime}
+                      onChange={(e) => setDefaultReminderTime(Number(e.target.value))}
+                      className="w-full px-3 py-1.5 bg-white border border-[#1A1A1A] rounded-none outline-none text-[#1A1A1A] text-xs font-serif transition-colors cursor-pointer"
+                    >
+                      <option value={5}>5 Minutes Before Due</option>
+                      <option value={15}>15 Minutes Before Due</option>
+                      <option value={30}>30 Minutes Before Due</option>
+                      <option value={60}>1 Hour Before Due</option>
+                      <option value={120}>2 Hours Before Due</option>
+                      <option value={1440}>1 Day Before Due</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Layout Padding Mode</label>
+                    <div className="flex">
+                      <button
+                        type="button"
+                        onClick={() => setLayoutMode('compact')}
+                        className={`flex-1 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider border border-[#1A1A1A] transition-all cursor-pointer ${
+                          layoutMode === 'compact' ? 'bg-[#1A1A1A] text-white' : 'bg-white hover:bg-slate-55 text-[#1A1A1A]'
+                        }`}
+                      >
+                        Compact UI
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLayoutMode('spacious')}
+                        className={`flex-1 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider border border-l-0 border-[#1A1A1A] transition-all cursor-pointer ${
+                          layoutMode === 'spacious' ? 'bg-[#1A1A1A] text-white' : 'bg-white hover:bg-slate-55 text-[#1A1A1A]'
+                        }`}
+                      >
+                        Spacious UI
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Workspace Font Size</label>
+                    <div className="flex">
+                      <button
+                        type="button"
+                        onClick={() => setFontSize('small')}
+                        className={`flex-1 px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider border border-[#1A1A1A] transition-all cursor-pointer ${
+                          fontSize === 'small' ? 'bg-[#1A1A1A] text-white' : 'bg-white hover:bg-slate-55 text-[#1A1A1A]'
+                        }`}
+                      >
+                        Small
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFontSize('default')}
+                        className={`flex-1 px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider border border-l-0 border-[#1A1A1A] transition-all cursor-pointer ${
+                          fontSize === 'default' ? 'bg-[#1A1A1A] text-white' : 'bg-white hover:bg-slate-55 text-[#1A1A1A]'
+                        }`}
+                      >
+                        Default
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFontSize('large')}
+                        className={`flex-1 px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider border border-l-0 border-[#1A1A1A] transition-all cursor-pointer ${
+                          fontSize === 'large' ? 'bg-[#1A1A1A] text-white' : 'bg-white hover:bg-slate-55 text-[#1A1A1A]'
+                        }`}
+                      >
+                        Large
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -428,6 +602,14 @@ export default function SettingsPage({ onBack, triggerToast, tasks, user, onRequ
                   localStorage.removeItem(`${baseKey}_profile_role`);
                   localStorage.removeItem(`${baseKey}_profile_station`);
                   
+                  // Clear personalization localStorage parameters
+                  localStorage.removeItem(`${baseKey}_workspace_name`);
+                  localStorage.removeItem(`${baseKey}_workspace_avatar`);
+                  localStorage.removeItem(`${baseKey}_default_task_view`);
+                  localStorage.removeItem(`${baseKey}_default_reminder_time`);
+                  localStorage.removeItem(`${baseKey}_layout_mode`);
+                  localStorage.removeItem(`${baseKey}_font_size`);
+                  
                   setDefaultCategory('Work');
                   setDefaultPriority('medium');
                   setTimeFormat('24h');
@@ -438,6 +620,13 @@ export default function SettingsPage({ onBack, triggerToast, tasks, user, onRequ
                   setProfileNickname(user?.displayName || user?.email?.split('@')[0] || '');
                   setProfileRole('Workspace Coordinator');
                   setProfileStation('Primary Hub No. 1');
+
+                  setWorkspaceName('SmartTask');
+                  setWorkspaceAvatar('📝');
+                  setDefaultTaskView('agenda');
+                  setDefaultReminderTime(60);
+                  setLayoutMode('spacious');
+                  setFontSize('default');
                   
                   // Instantly update layout
                   window.dispatchEvent(new Event('smarttask_settings_updated'));
@@ -455,6 +644,12 @@ export default function SettingsPage({ onBack, triggerToast, tasks, user, onRequ
                         defaultPriority: 'medium',
                         timeFormat: '24h',
                         deskSounds: true,
+                        workspaceName: 'SmartTask',
+                        workspaceAvatar: '📝',
+                        defaultTaskView: 'agenda',
+                        defaultReminderTime: 60,
+                        layoutMode: 'spacious',
+                        fontSize: 'default',
                       });
                     } catch (err) {
                       console.error(err);
