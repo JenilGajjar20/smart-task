@@ -296,14 +296,14 @@ export default function Dashboard({ tasks, onSelectTab, activeTab }: DashboardPr
           {activeCategories.length === 0 ? (
             <div className="py-8 text-center text-xs text-slate-400 italic">No active category loads.</div>
           ) : (
-            <div className="grid grid-cols-2 gap-2 max-h-[140px] overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 xl:grid-cols-2 gap-2 max-h-[140px] overflow-y-auto pr-1">
               {activeCategories.map(([cat, count]) => (
-                <div key={cat} className="flex items-center justify-between p-2.5 bg-white border border-[#1A1A1A] rounded-none">
-                  <div className="flex flex-col">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700">{cat}</span>
+                <div key={cat} className="flex items-center justify-between p-2.5 bg-white border border-[#1A1A1A] rounded-none gap-2">
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 truncate" title={cat}>{cat}</span>
                     <span className="text-[8px] text-slate-400 uppercase tracking-widest font-mono">Context</span>
                   </div>
-                  <span className="text-lg font-serif italic text-[#C2410C] font-semibold">{count}</span>
+                  <span className="text-lg font-serif italic text-[#C2410C] font-semibold shrink-0">{count}</span>
                 </div>
               ))}
             </div>

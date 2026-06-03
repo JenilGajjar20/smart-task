@@ -426,7 +426,7 @@ export default function TaskList({
           </div>
         </div>
       ) : viewMode === 'standard' ? (
-        <div className="space-y-px bg-[#1A1A1A] min-h-[150px]">
+        <div className="space-y-px bg-[#1A1A1A]">
           <div className="space-y-px">
             <AnimatePresence mode="popLayout">
               {processedTasks.map((task) => renderTaskItem(task))}
