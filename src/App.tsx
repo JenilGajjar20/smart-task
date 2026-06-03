@@ -202,13 +202,14 @@ export default function App() {
   useEffect(() => {
     const handleUrlRouting = () => {
       const hash = window.location.hash;
-      const path = window.location.pathname;
-      if (hash === '#guide' || hash === '#help' || path === '/guide' || path === '/help') {
+      if (hash === '#guide' || hash === '#help') {
         setCurrentView('guide');
-      } else if (hash === '#support' || path === '/support') {
+      } else if (hash === '#support') {
         setCurrentView('support');
-      } else if (hash === '#settings' || path === '/settings') {
+      } else if (hash === '#settings') {
         setCurrentView('settings');
+      } else {
+        setCurrentView('agenda');
       }
     };
     
@@ -222,12 +223,16 @@ export default function App() {
 
   // Update hash when currentView changes to preserve browser history/navigation expectations
   useEffect(() => {
-    if (currentView === 'agenda') {
-      if (window.location.hash) {
-        window.history.pushState(null, '', window.location.pathname + window.location.search);
+    try {
+      if (currentView === 'agenda') {
+        if (window.location.hash && window.location.hash !== '') {
+          window.history.pushState(null, '', window.location.pathname + window.location.search);
+        }
+      } else {
+        window.location.hash = currentView;
       }
-    } else {
-      window.location.hash = currentView;
+    } catch (e) {
+      console.warn('URL hash update failed: ', e);
     }
   }, [currentView]);
 
@@ -303,8 +308,8 @@ export default function App() {
     description: string | undefined;
     priority: Priority;
     category: Category;
-    dueDate: Timestamp;
-    reminderTime: Timestamp | null;
+    dueDate: Date;
+    reminderTime: Date | null;
     recurrence?: RecurrenceSettings | null;
     project?: string | null;
   }) => {
@@ -316,6 +321,9 @@ export default function App() {
 
     const path = 'tasks';
     try {
+      const dueDateTimestamp = Timestamp.fromDate(data.dueDate);
+      const reminderTimeTimestamp = data.reminderTime ? Timestamp.fromDate(data.reminderTime) : null;
+
       if (taskToEdit) {
         // UPDATE action (Requires full state to pass rule validation helper)
         const docRef = doc(db, path, taskToEdit.id);
@@ -325,7 +333,7 @@ export default function App() {
           priority: data.priority,
           category: data.category,
           completed: taskToEdit.completed, // retain completion status
-          dueDate: data.dueDate,
+          dueDate: dueDateTimestamp,
           createdAt: taskToEdit.createdAt, // retain creation timestamp (immutable)
           updatedAt: serverTimestamp(), // update field validated via rules
         };
@@ -333,8 +341,10 @@ export default function App() {
         if (data.description !== undefined) {
           updatePayload.description = data.description;
         }
-        if (data.reminderTime !== null) {
-          updatePayload.reminderTime = data.reminderTime;
+        if (reminderTimeTimestamp !== null) {
+          updatePayload.reminderTime = reminderTimeTimestamp;
+        } else {
+          updatePayload.reminderTime = null;
         }
         if (data.recurrence !== undefined) {
           updatePayload.recurrence = data.recurrence;
@@ -354,7 +364,7 @@ export default function App() {
           priority: data.priority,
           category: data.category,
           completed: false, // default new task to incomplete
-          dueDate: data.dueDate,
+          dueDate: dueDateTimestamp,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         };
@@ -362,8 +372,8 @@ export default function App() {
         if (data.description !== undefined) {
           createPayload.description = data.description;
         }
-        if (data.reminderTime !== null) {
-          createPayload.reminderTime = data.reminderTime;
+        if (reminderTimeTimestamp !== null) {
+          createPayload.reminderTime = reminderTimeTimestamp;
         }
         if (data.recurrence !== undefined) {
           createPayload.recurrence = data.recurrence;

@@ -12,8 +12,8 @@ interface TaskFormProps {
     description: string | undefined;
     priority: Priority;
     category: Category;
-    dueDate: Timestamp;
-    reminderTime: Timestamp | null;
+    dueDate: Date;
+    reminderTime: Date | null;
     recurrence?: RecurrenceSettings | null;
     project?: string | null;
   }) => Promise<void>;
@@ -120,29 +120,32 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
       if (isNaN(dueParsed.getTime())) {
         throw new Error('Please specify a valid deadline datetime.');
       }
-      const dueDateTimestamp = Timestamp.fromDate(dueParsed);
 
-      let reminderTimeTimestamp: Timestamp | null = null;
+      let reminderTimeDate: Date | null = null;
       if (reminderActive && reminderDateStr) {
         const reminderParsed = new Date(reminderDateStr);
         if (!isNaN(reminderParsed.getTime())) {
-          reminderTimeTimestamp = Timestamp.fromDate(reminderParsed);
+          reminderTimeDate = reminderParsed;
         }
       }
 
-      const recurrencePayload: RecurrenceSettings | null = recurrenceFrequency !== 'none' ? {
-        frequency: recurrenceFrequency,
-        interval: recurrenceFrequency === 'custom' ? Number(recurrenceInterval) || 1 : undefined,
-        unit: recurrenceFrequency === 'custom' ? recurrenceUnit : undefined,
-      } : null;
+      const recurrencePayload: RecurrenceSettings | null = recurrenceFrequency !== 'none' ? (
+        recurrenceFrequency === 'custom' ? {
+          frequency: recurrenceFrequency,
+          interval: Number(recurrenceInterval) || 1,
+          unit: recurrenceUnit,
+        } : {
+          frequency: recurrenceFrequency,
+        }
+      ) : null;
 
       await onSave({
         title: title.trim(),
         description: description.trim() || undefined,
         priority,
         category,
-        dueDate: dueDateTimestamp,
-        reminderTime: reminderTimeTimestamp,
+        dueDate: dueParsed,
+        reminderTime: reminderTimeDate,
         recurrence: recurrencePayload,
         project: project.trim() || null,
       });
