@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { X, Calendar, Flag, Tag, Sparkles, Clock, Folder } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import { Task, Priority, Category, RecurrenceFrequency, RecurrenceUnit, RecurrenceSettings, Attachment } from '../types';
+import { saveFileToLocal } from '../utils/fileStorage';
 
 interface TaskFormProps {
   taskToEdit?: Task | null;
@@ -131,12 +132,17 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
     if (files && files.length > 0) {
       const file = files[0];
       const reader = new FileReader();
-      reader.onload = () => {
+      reader.onload = async () => {
         const base64Url = reader.result as string;
+        const attachmentId = 'file-' + Date.now();
+        
+        // Persist content to local store asynchronously (bypasses Firestore 1MB limits)
+        await saveFileToLocal(attachmentId, base64Url);
+        
         const newAttachment: Attachment = {
-          id: 'file-' + Date.now(),
+          id: attachmentId,
           name: file.name,
-          url: base64Url,
+          url: 'local-file://' + attachmentId,
           type: file.type.startsWith('image/') ? 'Screenshot' : 'File'
         };
         setAttachments(prev => [...prev, newAttachment]);
@@ -336,7 +342,22 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
       onClose();
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Unable to store task. Please verify values.');
+      let errMsg = 'Unable to store task. Please verify values.';
+      try {
+        if (err.message && err.message.trim().startsWith('{')) {
+          const parsed = JSON.parse(err.message);
+          if (parsed.error) {
+            errMsg = `System Rejection: ${parsed.error}`;
+          }
+        } else if (err.message) {
+          errMsg = err.message;
+        }
+      } catch (_) {
+        if (err.message) {
+          errMsg = err.message;
+        }
+      }
+      setError(errMsg);
     } finally {
       setSaving(false);
     }

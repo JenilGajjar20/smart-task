@@ -10,6 +10,68 @@ import {
 import { db } from '../firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Task, Priority, Category } from '../types';
+import { getFileFromLocal } from '../utils/fileStorage';
+
+function AttachmentLink({ att }: { att: any }) {
+  const [resolvedUrl, setResolvedUrl] = useState(att.url);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (att.url && att.url.startsWith('local-file://')) {
+      const fileId = att.url.replace('local-file://', '');
+      setLoading(true);
+      getFileFromLocal(fileId).then((base64) => {
+        if (base64) {
+          setResolvedUrl(base64);
+        } else {
+          setResolvedUrl('#');
+        }
+        setLoading(false);
+      }).catch((err) => {
+        console.error('Failed to resolve local file', err);
+        setResolvedUrl('#');
+        setLoading(false);
+      });
+    } else {
+      setResolvedUrl(att.url);
+    }
+  }, [att.url]);
+
+  if (loading) {
+    return <span className="text-slate-400 italic text-[11px] font-mono">Resolving file...</span>;
+  }
+
+  if (resolvedUrl === '#') {
+    return (
+      <span className="text-slate-400 italic text-[11px]" title="This attachment was saved locally on the original device.">
+        {att.name} (Local-only file)
+      </span>
+    );
+  }
+
+  if (att.type === 'File' || att.type === 'Screenshot') {
+    return (
+      <a 
+        href={resolvedUrl} 
+        download={att.name}
+        className="font-serif italic font-medium text-[#C2410C] hover:underline truncate"
+      >
+        {att.name} (Download)
+      </a>
+    );
+  }
+
+  return (
+    <a 
+      href={resolvedUrl} 
+      target="_blank" 
+      referrerPolicy="no-referrer"
+      className="font-serif italic font-medium text-[#C2410C] hover:underline truncate"
+    >
+      {att.name}
+    </a>
+  );
+}
 
 interface TaskListProps {
   tasks: Task[];
@@ -1361,24 +1423,7 @@ export default function TaskList({
                                   <span className="text-[8px] font-mono font-bold uppercase px-1 py-0.5 bg-slate-200 text-slate-600">
                                     {att.type}
                                   </span>
-                                  {att.type === 'File' || att.type === 'Screenshot' ? (
-                                    <a 
-                                      href={att.url} 
-                                      download={att.name}
-                                      className="font-serif italic font-medium text-[#C2410C] hover:underline truncate"
-                                    >
-                                      {att.name} (Download)
-                                    </a>
-                                  ) : (
-                                    <a 
-                                      href={att.url} 
-                                      target="_blank" 
-                                      referrerPolicy="no-referrer"
-                                      className="font-serif italic font-medium text-[#C2410C] hover:underline truncate"
-                                    >
-                                      {att.name}
-                                    </a>
-                                  )}
+                                  <AttachmentLink att={att} />
                                 </div>
                                 <span className="text-[10px] text-slate-400 font-mono">Resource</span>
                               </div>
