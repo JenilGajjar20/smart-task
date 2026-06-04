@@ -84,6 +84,24 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
   const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
   const [editingSubtaskValue, setEditingSubtaskValue] = useState('');
 
+  // Accordion toggle states for Advanced Mode
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    basic: true,
+    schedule: false,
+    status: false,
+    workDetails: false,
+    attachments: false,
+    subtasks: false,
+    privateNotes: false,
+  });
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
   // Automatically set status to Waiting / Blocked when workspace dependency is filled
   useEffect(() => {
     if (dependency.trim() && status !== 'Waiting / Blocked' && status !== 'Completed' && status !== 'Cancelled') {
@@ -449,47 +467,63 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
             </div>
 
             {formMode === 'advanced' && (
-              <>
-                {/* Description */}
-                <div>
-                  <label className="block text-[10px] font-bold text-[#1A1A1A] uppercase tracking-[0.15em] mb-1.5 font-sans">Description (Optional)</label>
-                  <textarea
-                    placeholder="Include agenda details, milestones, reference links..."
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={3}
-                    maxLength={1000}
-                    className="w-full px-4 py-3 bg-white border border-[#1A1A1A] rounded-none outline-none focus:ring-1 focus:ring-[#C2410C] text-[#1A1A1A] text-sm font-serif resize-none"
-                  />
-                </div>
+              /* Advanced Mode - Collapsible Sections Accordion */
+              <div className="space-y-3 border border-[#1A1A1A]/10 p-1.5 bg-[#F4F3EF]/30 font-sans">
+                {/* 1. Basic Details Accordion */}
+                <div className="border border-[#1A1A1A]">
+                  <button
+                    type="button"
+                    onClick={() => toggleSection('basic')}
+                    className="w-full flex items-center justify-between p-3 bg-[#EBEAE6] hover:bg-[#EBEAE6]/80 text-[#1A1A1A] text-[10px] font-bold uppercase tracking-wider select-none cursor-pointer border-b border-[#1A1A1A]"
+                  >
+                    <span className="flex items-center gap-1.5">📝 Basic Details</span>
+                    <span className="font-mono text-xs">{expandedSections.basic ? '▼' : '►'}</span>
+                  </button>
+                  {expandedSections.basic && (
+                    <div className="p-4 bg-white space-y-4">
+                      {/* Description */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#1A1A1A] uppercase tracking-[0.15em] mb-1.5">Description (Optional)</label>
+                        <textarea
+                          placeholder="Include agenda details, milestones, reference links..."
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                          rows={3}
+                          maxLength={1000}
+                          className="w-full px-4 py-3 bg-white border border-[#1A1A1A] rounded-none outline-none focus:ring-1 focus:ring-[#C2410C] text-[#1A1A1A] text-sm font-serif resize-none"
+                        />
+                      </div>
 
-                {/* Project */}
-                <div>
-                  <label className="block text-[10px] font-bold text-[#1A1A1A] uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1.5 font-sans">
-                    <Folder className="h-3.5 w-3.5 text-[#C2410C]" /> Project / Section (Optional)
-                  </label>
-                  <input
-                    id="task-project-input"
-                    type="text"
-                    list="existing-projects"
-                    placeholder="e.g. Summer Release, Home Renovation"
-                    value={project}
-                    onChange={(e) => setProject(e.target.value)}
-                    maxLength={100}
-                    className="w-full px-4 py-3 bg-white border border-[#1A1A1A] rounded-none outline-none focus:ring-1 focus:ring-[#C2410C] text-[#1A1A1A] text-sm font-serif"
-                  />
-                  {existingProjects && existingProjects.length > 0 && (
-                    <datalist id="existing-projects">
-                      {existingProjects.map((p) => (
-                        <option key={p} value={p} />
-                      ))}
-                    </datalist>
+                      {/* Project */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#1A1A1A] uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1.5">
+                          <Folder className="h-3.5 w-3.5 text-[#C2410C]" /> Project / Section (Optional)
+                        </label>
+                        <input
+                          id="task-project-input"
+                          type="text"
+                          list="existing-projects"
+                          placeholder="e.g. Summer Release, Home Renovation"
+                          value={project}
+                          onChange={(e) => setProject(e.target.value)}
+                          maxLength={100}
+                          className="w-full px-4 py-3 bg-white border border-[#1A1A1A] rounded-none outline-none focus:ring-1 focus:ring-[#C2410C] text-[#1A1A1A] text-sm font-serif"
+                        />
+                        {existingProjects && existingProjects.length > 0 && (
+                          <datalist id="existing-projects">
+                            {existingProjects.map((p) => (
+                              <option key={p} value={p} />
+                            ))}
+                          </datalist>
+                        )}
+                        <span className="text-[9px] text-slate-500 font-serif italic mt-1 block leading-normal">
+                          Assign to an existing workspace book or create a new section inline by typing.
+                        </span>
+                      </div>
+                    </div>
                   )}
-                  <span className="text-[9px] text-slate-500 font-serif italic mt-1 block leading-normal">
-                    Assign to an existing workspace book or create a new section inline by typing.
-                  </span>
                 </div>
-              </>
+              </div>
             )}
 
             {/* Category and Priority (Two column grid) */}

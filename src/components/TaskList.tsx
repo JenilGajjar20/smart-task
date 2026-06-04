@@ -79,6 +79,9 @@ interface TaskListProps {
   onToggleComplete: (task: Task) => Promise<void>;
   onEditTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => Promise<void>;
+  searchQuery?: string;
+  setSearchQuery?: (val: string) => void;
+  isFiltersOpen?: boolean;
 }
 
 export default function TaskList({ 
@@ -86,9 +89,15 @@ export default function TaskList({
   activeTab, 
   onToggleComplete, 
   onEditTask, 
-  onDeleteTask 
+  onDeleteTask,
+  searchQuery,
+  setSearchQuery,
+  isFiltersOpen = false
 }: TaskListProps) {
-  const [search, setSearch] = useState('');
+  const [internalSearch, setInternalSearch] = useState('');
+  const search = searchQuery !== undefined ? searchQuery : internalSearch;
+  const setSearch = setSearchQuery !== undefined ? setSearchQuery : setInternalSearch;
+
   const [selectedPriority, setSelectedPriority] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedProject, setSelectedProject] = useState<string>('all');
@@ -571,14 +580,14 @@ export default function TaskList({
   };
 
   return (
-    <div className="bg-[#F9F8F6] rounded-none border border-[#1A1A1A] p-6 shadow-none space-y-6 font-sans">
+    <div className="bg-white rounded-none border border-slate-200 p-5 shadow-xs space-y-6 font-sans">
       
-      {/* 7-Way Multi-View Switcher Tab Strip */}
-      <div className="border-b border-[#1A1A1A] pb-3">
-        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-2 font-mono">
-          📐 Active Workspace View Matrix
+      {/* 7-Way Multi-View Switcher Tab Strip - Simplified */}
+      <div className="border-b border-slate-200 pb-3">
+        <label className="block text-[11px] font-semibold text-slate-500 mb-2 font-sans tracking-tight">
+          Select view orientation
         </label>
-        <div className="flex flex-wrap gap-1 bg-[#EBEAE6] p-1 border border-[#1A1A1A]/20">
+        <div className="flex flex-wrap gap-1 bg-slate-50 p-1 border border-slate-200">
           {[
             { key: 'agenda', label: '📋 Agenda' },
             { key: 'kanban', label: '🗂️ Kanban' },
@@ -598,10 +607,10 @@ export default function TaskList({
                   localStorage.setItem('smarttask_guest_default_task_view', tab.key);
                   localStorage.setItem('smarttask_default_task_view', tab.key);
                 }}
-                className={`flex-1 min-w-[100px] text-center py-2 px-3 text-[10px] font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer ${
+                className={`flex-1 min-w-[100px] text-center py-1.5 px-3 text-[11px] font-semibold tracking-tight transition-all duration-150 cursor-pointer ${
                   isActive 
-                    ? 'bg-[#1A1A1A] text-white' 
-                    : 'bg-transparent text-[#1A1A1A] hover:bg-white/40'
+                    ? 'bg-[#1A1A1A] text-white shadow-xs font-bold' 
+                    : 'bg-transparent text-slate-600 hover:text-slate-900 hover:bg-white/50'
                 }`}
               >
                 {tab.label}
@@ -611,101 +620,112 @@ export default function TaskList({
         </div>
       </div>
 
-      {/* Filters Toolbar */}
-      <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-3.5 h-4 w-4 text-[#1A1A1A]/60" />
-          <input
-            id="task-search-input"
-            type="text"
-            placeholder="Search tasks or agendas..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 bg-white border border-[#1A1A1A] rounded-none outline-none focus:ring-1 focus:ring-[#C2410C] text-[#1A1A1A] text-xs font-serif"
-          />
-        </div>
+      {/* Filters Toolbar as an animated collapsible drawer */}
+      <AnimatePresence initial={false}>
+        {isFiltersOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden space-y-4"
+          >
+            <div className="flex flex-col lg:flex-row gap-3 items-slate lg:items-center justify-between border-b border-dashed border-slate-200 pb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                <input
+                  id="task-search-input"
+                  type="text"
+                  placeholder="Filter tasks by text..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-8 pr-4 py-1.5 bg-white border border-slate-200 rounded-none outline-none focus:border-[#C2410C] text-slate-800 text-xs"
+                />
+              </div>
 
-        {/* Multi-Filter Selection row */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Project Select */}
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-white border border-[#1A1A1A] rounded-none">
-            <Folder className="h-3.5 w-3.5 text-[#C2410C] shrink-0" />
-            <select
-              value={selectedProject}
-              onChange={(e) => setSelectedProject(e.target.value)}
-              className="bg-transparent border-none outline-none text-[10px] font-bold uppercase tracking-wider text-[#1A1A1A] cursor-pointer"
-            >
-              <option value="all">All Projects</option>
-              <option value="none">No Project</option>
-              {projects.map(p => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
-          </div>
+              {/* Multi-Filter Selection row */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Project Select */}
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-none">
+                  <Folder className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                  <select
+                    value={selectedProject}
+                    onChange={(e) => setSelectedProject(e.target.value)}
+                    className="bg-transparent border-none outline-none text-xs font-semibold text-[#1A1A1A] cursor-pointer"
+                  >
+                    <option value="all">All Projects</option>
+                    <option value="none">No Project</option>
+                    {projects.map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
 
-          {/* Priority Select */}
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-white border border-[#1A1A1A] rounded-none">
-            <SlidersHorizontal className="h-3.5 w-3.5 text-[#1A1A1A]/60 shrink-0" />
-            <select
-              value={selectedPriority}
-              onChange={(e) => setSelectedPriority(e.target.value)}
-              className="bg-transparent border-none outline-none text-[10px] font-bold uppercase tracking-wider text-[#1A1A1A] cursor-pointer"
-            >
-              <option value="all">Any Urgency</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
-          </div>
+                {/* Priority Select */}
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-none">
+                  <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                  <select
+                    value={selectedPriority}
+                    onChange={(e) => setSelectedPriority(e.target.value)}
+                    className="bg-transparent border-none outline-none text-xs font-semibold text-[#1A1A1A] cursor-pointer"
+                  >
+                    <option value="all">Any Urgency</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
 
-          {/* Category Select */}
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-white border border-[#1A1A1A] rounded-none">
-            <SlidersHorizontal className="h-3.5 w-3.5 text-[#1A1A1A]/60 shrink-0" />
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="bg-transparent border-none outline-none text-[10px] font-bold uppercase tracking-wider text-[#1A1A1A] cursor-pointer"
-            >
-              <option value="all">Any Category</option>
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
+                {/* Category Select */}
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-none">
+                  <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="bg-transparent border-none outline-none text-xs font-semibold text-[#1A1A1A] cursor-pointer"
+                  >
+                    <option value="all">Any Category</option>
+                    {categories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
 
-          {/* Status Select Filter */}
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-white border border-[#1A1A1A] rounded-none">
-            <SlidersHorizontal className="h-3.5 w-3.5 text-[#1A1A1A]/60 shrink-0" />
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="bg-transparent border-none outline-none text-[10px] font-bold uppercase tracking-wider text-[#1A1A1A] cursor-pointer"
-            >
-              <option value="all">Any Status</option>
-              <option value="Not Started">Not Started</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Waiting / Blocked">Blocked</option>
-              <option value="Completed">Completed</option>
-              <option value="Cancelled">Cancelled</option>
-            </select>
-          </div>
+                {/* Status Select Filter */}
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-none">
+                  <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                  <select
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    className="bg-transparent border-none outline-none text-xs font-semibold text-[#1A1A1A] cursor-pointer"
+                  >
+                    <option value="all">Any Status</option>
+                    <option value="Not Started">Not Started</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Waiting / Blocked">Blocked</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                </div>
 
-          {/* Sort selection */}
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-[#F1EFEA] border border-[#1A1A1A] rounded-none">
-            <ArrowUpDown className="h-3.5 w-3.5 text-[#1A1A1A]/60 shrink-0" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="bg-transparent border-none outline-none text-[10px] font-bold uppercase tracking-wider text-[#1A1A1A] cursor-pointer font-sans"
-            >
-              <option value="dueDateAsc">Due: Soonest</option>
-              <option value="dueDateDesc">Due: Latest</option>
-              <option value="priorityDesc">Urgency: High first</option>
-              <option value="createdAtDesc">Added: Newest</option>
-            </select>
-          </div>
-        </div>
-      </div>
+                {/* Sort selection */}
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-none">
+                  <ArrowUpDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="bg-transparent border-none outline-none text-xs font-semibold text-[#1A1A1A] cursor-pointer font-sans"
+                  >
+                    <option value="dueDateAsc">Due: Soonest</option>
+                    <option value="dueDateDesc">Due: Latest</option>
+                    <option value="priorityDesc">Urgency: High first</option>
+                    <option value="createdAtDesc">Added: Newest</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* MATRIX RENDER CONTENT */}
       {processedTasks.length === 0 ? (

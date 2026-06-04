@@ -19,7 +19,7 @@ import SupportPage from './components/SupportPage';
 import SettingsPage from './components/SettingsPage';
 import GuidePage from './components/GuidePage';
 import { 
-  CheckSquare, LogOut, Plus, Sparkles, RefreshCw, User as UserIcon, BellRing, Settings, CalendarRange, Clock, AlertCircle, X, BookOpen
+  CheckSquare, LogOut, Plus, Sparkles, RefreshCw, User as UserIcon, BellRing, Settings, CalendarRange, Clock, AlertCircle, X, BookOpen, Search, SlidersHorizontal
 } from 'lucide-react';
 
 const GUEST_TASKS: Task[] = [
@@ -98,7 +98,10 @@ export default function App() {
 
   // Active filters and views
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'completed' | 'overdue'>('all');
-  const [currentView, setCurrentView] = useState<'agenda' | 'support' | 'settings' | 'guide'>('agenda');
+  const [currentView, setCurrentView] = useState<'agenda' | 'support' | 'settings' | 'guide' | 'insights'>('agenda');
+  const [searchQueryGlobal, setSearchQueryGlobal] = useState('');
+  const [isGlobalFilterOpen, setIsGlobalFilterOpen] = useState(false);
+  const [isHelpMenuOpen, setIsHelpMenuOpen] = useState(false);
 
   // Application alert banner
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -269,6 +272,8 @@ export default function App() {
         setCurrentView('support');
       } else if (hash === '#settings') {
         setCurrentView('settings');
+      } else if (hash === '#insights') {
+        setCurrentView('insights');
       } else {
         setCurrentView('agenda');
       }
@@ -680,63 +685,193 @@ export default function App() {
       </AnimatePresence>
 
       <div className="max-w-6xl mx-auto px-6 md:px-12 py-12 flex flex-col min-h-screen">
-        {/* Global Interactive Header */}
-        <header className="flex flex-col md:flex-row justify-between items-baseline border-b border-[#1A1A1A] pb-6 mb-8 gap-4 w-full">
-          <div onClick={() => setCurrentView('agenda')} className="cursor-pointer select-none group">
-            <h1 className="text-xs tracking-[0.3em] font-bold uppercase mb-2 text-[#C2410C] group-hover:text-[#1A1A1A] transition-colors font-sans">The Daily Standard</h1>
-            <div className="text-5xl md:text-6xl font-serif italic leading-none font-semibold group-hover:opacity-85 transition-opacity flex items-center gap-3">
-              <span>{workspaceAvatar}</span>
-              <span>{workspaceName}</span>
+        {/* Global Compact Header */}
+        <header className="flex flex-col sm:flex-row justify-between items-center border-b border-slate-200 pb-4 mb-4 gap-4 w-full font-sans">
+          <div onClick={() => setCurrentView('agenda')} className="cursor-pointer select-none group flex items-center gap-3">
+            <span className="text-3xl">{workspaceAvatar}</span>
+            <div>
+              <h1 className="text-[10px] tracking-[0.15em] font-medium uppercase text-slate-500 font-sans leading-none mb-1">
+                Workspace Hub
+              </h1>
+              <div className="text-2xl font-serif italic font-semibold text-[#1A1A1A] group-hover:opacity-80 transition-opacity">
+                {workspaceName}
+              </div>
             </div>
           </div>
           
-          <div className="flex flex-col md:text-right items-start md:items-end gap-2 w-full md:w-auto">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest opacity-60 mb-1">
-                {profileRole} // {profileStation}
-              </p>
-              <div className="text-xl font-serif tracking-tight flex items-center md:justify-end gap-2 font-medium">
-                <span>{profileNickname || (user ? user.displayName || 'Workspace Contributor' : 'Guest Contributor')}</span>
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="text-right hidden sm:block">
+              <div className="text-xs font-semibold text-slate-900">
+                {profileNickname || (user ? user.displayName || 'Workspace Contributor' : 'Guest Contributor')}
               </div>
-              <p className="text-xs font-mono opacity-50 mt-0.5">{user ? user.email : 'guest-session@smarttask.net'}</p>
+              <p className="text-[9px] text-slate-500 font-mono mt-0.5">{user ? user.email : 'guest-session@smarttask.net'}</p>
             </div>
             
-            <div className="flex items-center gap-3 mt-1">
-              {user && user.photoURL ? (
-                <img 
-                  src={user.photoURL} 
-                  alt="Avatar" 
-                  referrerPolicy="no-referrer"
-                  className="h-8 w-8 rounded-none border border-[#1A1A1A]"
-                />
-              ) : (
-                <div className="h-8 w-8 bg-white border border-[#1A1A1A] flex items-center justify-center text-slate-500 font-bold">
-                  <UserIcon className="h-4 w-4 text-[#1A1A1A]" />
-                </div>
-              )}
-              
-              {user ? (
-                <button
-                  id="header-logout-btn"
-                  onClick={handleSignOut}
-                  className="px-2.5 py-1.5 border border-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer"
-                  title="Log out of application"
-                >
-                  Exit Workspace
-                </button>
-              ) : (
-                <button
-                  id="header-signin-btn"
-                  onClick={() => setIsAuthModalOpen(true)}
-                  className="px-4 py-1.5 border-2 border-[#C2410C] bg-[#C2410C] text-white hover:bg-transparent hover:text-[#C2410C] text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer"
-                  title="Connect your Google Account"
-                >
-                  Connect Account
-                </button>
-              )}
-            </div>
+            {user && user.photoURL ? (
+              <img 
+                src={user.photoURL} 
+                alt="Avatar" 
+                referrerPolicy="no-referrer"
+                className="h-7 w-7 rounded-none border border-slate-200"
+              />
+            ) : (
+              <div className="h-7 w-7 bg-white border border-slate-200 flex items-center justify-center text-[#1A1A1A]">
+                <UserIcon className="h-3.5 w-3.5" />
+              </div>
+            )}
           </div>
         </header>
+
+        {/* Simplified, Mobile-Friendly Top Navigation Bar */}
+        <nav className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-200 pb-4 mb-6 gap-3.5 font-sans">
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <button
+              onClick={() => setCurrentView('agenda')}
+              className={`px-3.5 py-1.5 text-xs font-semibold tracking-tight transition-colors cursor-pointer flex items-center gap-2 ${
+                currentView === 'agenda' 
+                  ? 'bg-[#1A1A1A] text-white' 
+                  : 'bg-white text-[#1A1A1A] border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              📋 Agenda
+            </button>
+            <button
+              onClick={() => setCurrentView('insights')}
+              className={`px-3.5 py-1.5 text-xs font-semibold tracking-tight transition-colors cursor-pointer flex items-center gap-2 ${
+                currentView === 'insights' 
+                  ? 'bg-[#1A1A1A] text-white' 
+                  : 'bg-white text-[#1A1A1A] border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              📊 Insights
+            </button>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto md:justify-end">
+            {/* Global Search integrated Directly */}
+            <div className="relative flex-1 sm:w-44 md:w-56 min-w-[150px]">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+              <input
+                id="global-nav-search"
+                type="text"
+                placeholder="Search priorities..."
+                value={searchQueryGlobal}
+                onChange={(e) => {
+                  setSearchQueryGlobal(e.target.value);
+                  if (currentView !== 'agenda') setCurrentView('agenda');
+                }}
+                className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 text-xs font-sans outline-none focus:border-[#C2410C]"
+              />
+            </div>
+
+            {/* Collapsible Filters Toggle */}
+            <button
+              onClick={() => {
+                setIsGlobalFilterOpen(!isGlobalFilterOpen);
+                if (currentView !== 'agenda') setCurrentView('agenda');
+              }}
+              className={`px-3.5 py-1.5 text-xs font-semibold tracking-tight transition-colors cursor-pointer flex items-center justify-center gap-1.5 border ${
+                isGlobalFilterOpen 
+                  ? 'bg-[#C2410C]/10 border-[#C2410C] text-[#C2410C]' 
+                  : 'bg-white border-slate-200 text-[#1A1A1A] hover:bg-slate-50'
+              }`}
+              title="Toggle filter controls"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              <span>Filters</span>
+            </button>
+
+            {/* Quick Compose / Add Task Action */}
+            <button
+              onClick={() => {
+                if (!user) {
+                  setIsAuthModalOpen(true);
+                  triggerToast('Authentication Required. Please connect your account to compose tasks.', 'error');
+                  return;
+                }
+                setTaskToEdit(null);
+                setIsFormOpen(true);
+              }}
+              className="bg-[#C2410C] text-white px-3.5 py-1.5 text-xs font-semibold tracking-tight hover:bg-[#a1350a] transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Add Task</span>
+            </button>
+
+            {/* Settings View Route button */}
+            <button
+              onClick={() => setCurrentView('settings')}
+              className={`px-3.5 py-1.5 text-xs font-semibold tracking-tight transition-colors cursor-pointer flex items-center justify-center gap-1.5 border ${
+                currentView === 'settings' 
+                  ? 'bg-[#1A1A1A] text-white border-[#1A1A1A]' 
+                  : 'bg-white border-slate-200 text-[#1A1A1A] hover:bg-slate-50'
+              }`}
+            >
+              <Settings className="h-3.5 w-3.5" />
+              <span>Settings</span>
+            </button>
+
+            {/* Help & Support Dropdown Menu container */}
+            <div className="relative">
+              <button
+                onClick={() => setIsHelpMenuOpen(!isHelpMenuOpen)}
+                className="px-3.5 py-1.5 text-xs font-semibold tracking-tight border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 cursor-pointer flex items-center justify-center gap-1 w-full"
+              >
+                <span>Help Menu</span>
+                <span className="text-[9px] opacity-75">▼</span>
+              </button>
+              
+              {isHelpMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsHelpMenuOpen(false)} />
+                  <div className="absolute right-0 mt-1.5 w-44 bg-white border border-slate-200 shadow-lg py-1.5 z-55 font-sans">
+                    <button
+                      onClick={() => {
+                        setCurrentView('guide');
+                        setIsHelpMenuOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                    >
+                      <BookOpen className="h-3.5 w-3.5" /> User Guide
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCurrentView('support');
+                        setIsHelpMenuOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                    >
+                      <BellRing className="h-3.5 w-3.5" /> Help Support
+                    </button>
+                    <div className="border-t border-slate-100 my-1.5" />
+                    {user ? (
+                      <button
+                        onClick={() => {
+                          handleSignOut();
+                          setIsHelpMenuOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-xs text-rose-650 hover:bg-rose-50 flex items-center gap-2 cursor-pointer font-semibold"
+                      >
+                        <LogOut className="h-3.5 w-3.5" /> Exit Workspace
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setIsAuthModalOpen(true);
+                          setIsHelpMenuOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-xs text-[#C2410C] hover:bg-orange-50 flex items-center gap-2 cursor-pointer font-semibold"
+                      >
+                        <UserIcon className="h-3.5 w-3.5" /> Connect Account
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+            
+          </div>
+        </nav>
 
         {/* Main Grid Workspace Area */}
         <main className="flex-1 space-y-8">
@@ -794,65 +929,59 @@ export default function App() {
                 triggerToast('Authentication Required. Please connect your account to apply preset configurations.', 'error');
               }}
             />
-          ) : (
-            <div className="space-y-8">
-              {/* Orientation Manual Greeting Banner */}
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white border border-[#1A1A1A] p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
-              >
-                <div className="space-y-1">
-                  <span className="text-[10px] uppercase font-bold tracking-widest text-[#C2410C] font-mono">// Orientation Manual</span>
-                  <p className="text-xs text-slate-600 font-serif leading-relaxed">
-                    Personalizing your checklist? Learn how headers, roles, and <strong className="text-[#1A1A1A]">Workspace Hubs</strong> sync elegantly for both tech and daily life.
-                  </p>
+          ) : currentView === 'insights' ? (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 pb-4 gap-4">
+                <div>
+                  <h3 className="font-serif italic text-3xl text-[#1A1A1A]">Workspace Insights</h3>
+                  <p className="text-xs text-slate-500 font-sans mt-0.5">Productivity trends, workload analyses, and category matrices.</p>
                 </div>
                 <button
-                  onClick={() => setCurrentView('guide')}
-                  className="shrink-0 border border-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 font-sans"
+                  onClick={() => setCurrentView('agenda')}
+                  className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold tracking-tight transition-all cursor-pointer font-sans"
                 >
-                  <BookOpen className="h-3.5 w-3.5" /> View Guide & Presets
+                  Back to Agenda
                 </button>
-              </motion.div>
+              </div>
+              <Dashboard 
+                tasks={tasks} 
+                activeTab={activeTab}
+                onSelectTab={(tab) => {
+                  setActiveTab(tab);
+                  setCurrentView('agenda');
+                }} 
+                view="insights"
+              />
+            </div>
+          ) : (
+            <div className="space-y-6">
               {/* Dashboard counters */}
               <Dashboard 
                 tasks={tasks} 
                 activeTab={activeTab}
                 onSelectTab={(tab) => setActiveTab(tab)} 
+                view="summary"
               />
 
               {/* Structured Table and Task items */}
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row justify-between items-baseline border-b border-[#1A1A1A] pb-4 gap-4">
+              <div className="space-y-4 pt-2">
+                <div className="flex flex-col sm:flex-row justify-between items-baseline border-b border-slate-200 pb-3 gap-4">
                   <div className="flex items-baseline gap-2">
-                    <h3 className="font-serif italic text-4xl text-[#1A1A1A]">
+                    <h3 className="font-serif italic text-3xl text-[#1A1A1A]">
                       {activeTab === 'all' ? 'The Agenda' : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Assignments`}
                     </h3>
-                    <span className="text-[10px] uppercase font-bold tracking-widest opacity-40 italic">
-                      // Sorted by Priority
-                    </span>
                   </div>
                   
                   <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-                    <span className="text-[10px] uppercase font-bold tracking-wider opacity-60 font-mono">
-                      {tasks.length} task{tasks.length !== 1 ? 's' : ''} filed
+                    <span className="text-[10px] uppercase font-bold tracking-wider opacity-50 font-mono">
+                      {tasks.filter(t => {
+                        const status = t.status || (t.completed ? 'Completed' : 'Not Started');
+                        if (activeTab === 'pending') return status !== 'Completed';
+                        if (activeTab === 'completed') return status === 'Completed';
+                        if (activeTab === 'overdue') return status !== 'Completed' && t.dueDate.toDate() < new Date();
+                        return true;
+                      }).length} items selected
                     </span>
-                    <button
-                      id="header-create-task-btn"
-                      onClick={() => {
-                        if (!user) {
-                          setIsAuthModalOpen(true);
-                          triggerToast('Authentication Required. Please connect your account to compose tasks.', 'error');
-                          return;
-                        }
-                        setTaskToEdit(null);
-                        setIsFormOpen(true);
-                      }}
-                      className="border-2 border-[#1A1A1A] bg-transparent text-[#1A1A1A] px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-[#1A1A1A] hover:text-white transition-all duration-200 cursor-pointer"
-                    >
-                      Compose New Task
-                    </button>
                   </div>
                 </div>
 
@@ -862,6 +991,9 @@ export default function App() {
                   onToggleComplete={handleToggleComplete}
                   onEditTask={handleEditInit}
                   onDeleteTask={handleDeleteTask}
+                  searchQuery={searchQueryGlobal}
+                  setSearchQuery={setSearchQueryGlobal}
+                  isFiltersOpen={isGlobalFilterOpen}
                 />
               </div>
             </div>
@@ -869,33 +1001,27 @@ export default function App() {
         </main>
 
         {/* Footer */}
-        <footer className="mt-16 flex flex-col sm:flex-row justify-between items-center text-[10px] uppercase tracking-[0.2em] font-bold border-t border-[#1A1A1A] pt-6 gap-4 text-slate-600/70 font-mono">
+        <footer className="mt-16 flex flex-col sm:flex-row justify-between items-center text-xs border-t border-slate-200 pt-6 gap-4 text-slate-400 font-sans">
           <span>SmartTask Version 4.02 // Edition {new Date().getFullYear()}</span>
-          <span>Encrypted dispatch channel workspace</span>
           <div className="flex gap-4">
             <span 
-              className={`hover:underline cursor-pointer transition-colors ${currentView === 'guide' ? 'text-[#C2410C] underline font-bold' : ''}`}
+              className={`hover:text-slate-700 cursor-pointer transition-colors ${currentView === 'guide' ? 'text-[#C2410C] font-semibold' : ''}`}
               onClick={() => setCurrentView('guide')}
             >
               Guide
             </span>
             <span 
-              className={`hover:underline cursor-pointer transition-colors ${currentView === 'support' ? 'text-[#C2410C] underline font-bold' : ''}`}
+              className={`hover:text-slate-700 cursor-pointer transition-colors ${currentView === 'support' ? 'text-[#C2410C] font-semibold' : ''}`}
               onClick={() => setCurrentView('support')}
             >
               Support
             </span>
             <span 
-              className={`hover:underline cursor-pointer transition-colors ${currentView === 'settings' ? 'text-[#C2410C] underline font-bold' : ''}`}
+              className={`hover:text-slate-700 cursor-pointer transition-colors ${currentView === 'settings' ? 'text-[#C2410C] font-semibold' : ''}`}
               onClick={() => setCurrentView('settings')}
             >
               Settings
             </span>
-            {user ? (
-              <span className="hover:underline cursor-pointer" onClick={handleSignOut}>Exit Workspace</span>
-            ) : (
-              <span className="hover:underline cursor-pointer text-[#C2410C]" onClick={() => setIsAuthModalOpen(true)}>Connect Account</span>
-            )}
           </div>
         </footer>
       </div>

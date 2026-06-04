@@ -7,9 +7,10 @@ interface DashboardProps {
   tasks: Task[];
   onSelectTab: (tab: 'all' | 'pending' | 'completed' | 'overdue') => void;
   activeTab: string;
+  view?: 'summary' | 'insights';
 }
 
-export default function Dashboard({ tasks, onSelectTab, activeTab }: DashboardProps) {
+export default function Dashboard({ tasks, onSelectTab, activeTab, view = 'summary' }: DashboardProps) {
   const nonCancelledTasks = useMemo(() => tasks.filter(t => t.status !== 'Cancelled'), [tasks]);
   const total = nonCancelledTasks.length;
   
@@ -152,7 +153,7 @@ export default function Dashboard({ tasks, onSelectTab, activeTab }: DashboardPr
   const statCards = [
     {
       id: 'pending',
-      title: 'Pending Obligations',
+      title: 'Pending tasks',
       value: pending,
       icon: Clock,
       themeColor: '#C2410C',
@@ -160,7 +161,7 @@ export default function Dashboard({ tasks, onSelectTab, activeTab }: DashboardPr
     },
     {
       id: 'completed',
-      title: 'Completed List',
+      title: 'Completed tasks',
       value: completed,
       icon: CheckCircle2,
       themeColor: '#1A1A1A',
@@ -168,7 +169,7 @@ export default function Dashboard({ tasks, onSelectTab, activeTab }: DashboardPr
     },
     {
       id: 'overdue',
-      title: 'Critical Overdue',
+      title: 'Overdue tasks',
       value: overdue,
       icon: AlertTriangle,
       themeColor: '#C2410C',
@@ -176,7 +177,7 @@ export default function Dashboard({ tasks, onSelectTab, activeTab }: DashboardPr
     },
     {
       id: 'all',
-      title: 'Total Scope',
+      title: 'Total tasks',
       value: total,
       icon: ListChecks,
       themeColor: '#1A1A1A',
@@ -184,10 +185,61 @@ export default function Dashboard({ tasks, onSelectTab, activeTab }: DashboardPr
     }
   ];
 
+  if (view === 'summary') {
+    return (
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 font-sans text-[#1A1A1A] my-1">
+        {statCards.map((card, idx) => {
+          const Icon = card.icon;
+          const isActive = activeTab === card.tabKey;
+          const isOverdueAlert = card.id === 'overdue' && overdue > 0;
+          
+          return (
+            <motion.div
+              key={card.id}
+              onClick={() => onSelectTab(card.tabKey)}
+              className={`p-3.5 rounded-none border transition-all duration-200 cursor-pointer flex flex-col justify-between shadow-xs ${
+                isActive 
+                  ? 'bg-[#1A1A1A] border-[#1A1A1A] text-white shadow-sm' 
+                  : 'bg-white border-slate-200 text-[#1A1A1A] hover:bg-slate-50 hover:border-slate-300'
+              }`}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.04 }}
+              whileHover={{ scale: 1.01 }}
+            >
+              <div className="flex justify-between items-center w-full mb-2.5">
+                <span className={`text-[11px] font-medium font-sans ${isActive ? 'text-slate-305' : 'text-slate-500'}`}>
+                  {card.title}
+                </span>
+                <div className={`p-1 shrink-0 ${
+                  isActive 
+                    ? 'text-white bg-slate-800' 
+                    : isOverdueAlert 
+                    ? 'text-white bg-[#C2410C]' 
+                    : 'text-[#1A1A1A] bg-slate-100'
+                }`}>
+                  <Icon className="h-3.5 w-3.5" />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-1 flex-wrap">
+                <span className="text-2xl md:text-3xl font-serif font-bold leading-none">
+                  {String(card.value).padStart(2, '0')}
+                </span>
+                <span className={`text-[9px] font-medium font-sans ${isActive ? 'text-slate-400' : 'text-slate-400'}`}>
+                  task{card.value !== 1 ? 's' : ''}
+                </span>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6 font-sans text-[#1A1A1A]">
+    <div className="space-y-8 font-sans text-[#1A1A1A]">
       {/* Top Banner with Completion Rate */}
-      <div className="bg-[#F9F8F6] rounded-none border border-[#1A1A1A] p-6 shadow-none overflow-hidden relative flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="bg-white rounded-none border border-slate-200 p-6 shadow-xs overflow-hidden relative flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="space-y-3 text-center md:text-left max-w-xl z-10">
           <div className="flex gap-2 items-center justify-center md:justify-start text-[#C2410C] bg-[#C2410C]/5 px-3 py-1 border border-[#C2410C]/20 rounded-none text-[10px] font-bold uppercase tracking-widest w-fit">
             <Sparkles className="h-3.5 w-3.5" />
