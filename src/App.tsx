@@ -97,8 +97,13 @@ export default function App() {
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
 
   // Active filters and views
-  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'completed' | 'overdue'>('all');
+  const [activeTab, setActiveTab ] = useState<'all' | 'pending' | 'completed' | 'overdue'>('all');
   const [currentView, setCurrentView] = useState<'agenda' | 'support' | 'settings' | 'guide' | 'insights'>('agenda');
+  const [viewKey, setViewKey] = useState<string>(() => {
+    return localStorage.getItem('smarttask_guest_default_task_view') || 
+           localStorage.getItem('smarttask_default_task_view') || 
+           'agenda';
+  });
   const [searchQueryGlobal, setSearchQueryGlobal] = useState('');
   const [isGlobalFilterOpen, setIsGlobalFilterOpen] = useState(false);
   const [isHelpMenuOpen, setIsHelpMenuOpen] = useState(false);
@@ -994,6 +999,9 @@ export default function App() {
                   searchQuery={searchQueryGlobal}
                   setSearchQuery={setSearchQueryGlobal}
                   isFiltersOpen={isGlobalFilterOpen}
+                  onCloseFilters={() => setIsGlobalFilterOpen(false)}
+                  viewKey={viewKey}
+                  setViewKey={setViewKey}
                 />
               </div>
             </div>
@@ -1050,6 +1058,109 @@ export default function App() {
           triggerToast('Successfully authenticated. Secure Cloud Sync enabled!');
         }}
       />
+
+      {/* Floating Action Button (FAB) for adding tasks on mobile screens */}
+      <div className="fixed bottom-20 right-5 z-40 sm:hidden">
+        <button
+          onClick={() => {
+            if (!user) {
+              setIsAuthModalOpen(true);
+              triggerToast('Authentication Required. Please connect your account to compose tasks.', 'error');
+              return;
+            }
+            setTaskToEdit(null);
+            setIsFormOpen(true);
+          }}
+          className="w-12 h-12 bg-[#C2410C] hover:bg-[#a1350a] text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all cursor-pointer"
+          title="Add Task"
+        >
+          <Plus className="h-6 w-6" />
+        </button>
+      </div>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <div className="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 z-40 sm:hidden pb-safe">
+        <div className="grid grid-cols-5 h-16">
+          {/* Today Button */}
+          <button
+            onClick={() => {
+              setCurrentView('agenda');
+              setViewKey('focus');
+            }}
+            className={`flex flex-col items-center justify-center gap-1 cursor-pointer select-none transition-colors ${
+              currentView === 'agenda' && viewKey === 'focus'
+                ? 'text-[#C2410C]' 
+                : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <Clock className="h-5 w-5" />
+            <span className="text-[9px] font-bold uppercase tracking-wider font-sans">Today</span>
+          </button>
+
+          {/* Tasks Button */}
+          <button
+            onClick={() => {
+              setCurrentView('agenda');
+              setViewKey('agenda');
+            }}
+            className={`flex flex-col items-center justify-center gap-1 cursor-pointer select-none transition-colors ${
+              currentView === 'agenda' && viewKey === 'agenda'
+                ? 'text-[#C2410C]' 
+                : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <CheckSquare className="h-5 w-5" />
+            <span className="text-[9px] font-bold uppercase tracking-wider font-sans">Tasks</span>
+          </button>
+
+          {/* Calendar Button */}
+          <button
+            onClick={() => {
+              setCurrentView('agenda');
+              setViewKey('calendar');
+            }}
+            className={`flex flex-col items-center justify-center gap-1 cursor-pointer select-none transition-colors ${
+              currentView === 'agenda' && viewKey === 'calendar'
+                ? 'text-[#C2410C]' 
+                : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <CalendarRange className="h-5 w-5" />
+            <span className="text-[9px] font-bold uppercase tracking-wider font-sans">Calendar</span>
+          </button>
+
+          {/* Categories Button */}
+          <button
+            onClick={() => {
+              setCurrentView('agenda');
+              setViewKey('category');
+            }}
+            className={`flex flex-col items-center justify-center gap-1 cursor-pointer select-none transition-colors ${
+              currentView === 'agenda' && viewKey === 'category'
+                ? 'text-[#C2410C]' 
+                : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <BookOpen className="h-5 w-5" />
+            <span className="text-[9px] font-bold uppercase tracking-wider font-sans">Folders</span>
+          </button>
+
+          {/* Settings Button */}
+          <button
+            onClick={() => {
+              setCurrentView('settings');
+            }}
+            className={`flex flex-col items-center justify-center gap-1 cursor-pointer select-none transition-colors ${
+              currentView === 'settings'
+                ? 'text-[#C2410C]' 
+                : 'text-[#1a1a1a] opacity-50 hover:opacity-100'
+            }`}
+          >
+            <Settings className="h-5 w-5" />
+            <span className="text-[9px] font-bold uppercase tracking-wider font-sans">Settings</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

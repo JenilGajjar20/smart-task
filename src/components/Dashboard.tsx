@@ -187,7 +187,7 @@ export default function Dashboard({ tasks, onSelectTab, activeTab, view = 'summa
 
   if (view === 'summary') {
     return (
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 font-sans text-[#1A1A1A] my-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-sans text-[#1A1A1A] my-1">
         {statCards.map((card, idx) => {
           const Icon = card.icon;
           const isActive = activeTab === card.tabKey;
@@ -285,7 +285,7 @@ export default function Dashboard({ tasks, onSelectTab, activeTab, view = 'summa
       </div>
 
       {/* Grid of Interactive counters */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((card, idx) => {
           const Icon = card.icon;
           const isActive = activeTab === card.tabKey;

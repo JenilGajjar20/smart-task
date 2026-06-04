@@ -646,14 +646,14 @@
 }
 .theme-cyberneon.dark-themed .text-\[\#1A1A1A\] {
   color: #00FFCC !important;
-  text-shadow: 0 0 5px rgba(0, 255, 204, 0.4) !important;
+  text-shadow: none !important;
 }
 .theme-cyberneon.light-themed .text-\[\#C2410C\] {
   color: #8F00FF !important;
 }
 .theme-cyberneon.dark-themed .text-\[\#C2410C\] {
   color: #FF007A !important;
-  text-shadow: 0 0 5px rgba(255, 0, 122, 0.4) !important;
+  text-shadow: none !important;
 }
 .theme-cyberneon.light-themed .bg-\[\#C2410C\] {
   background-color: #8F00FF !important;
@@ -662,7 +662,7 @@
 .theme-cyberneon.dark-themed .bg-\[\#C2410C\] {
   background-color: #FF007A !important;
   color: #FFFFFF !important;
-  box-shadow: 0 0 12px #FF007A !important;
+  box-shadow: 0 2px 8px rgba(255, 0, 122, 0.2) !important;
 }
 .theme-cyberneon.light-themed .border-\[\#1A1A1A\] {
   border-color: #D3B3FF !important;

@@ -82,6 +82,9 @@ interface TaskListProps {
   searchQuery?: string;
   setSearchQuery?: (val: string) => void;
   isFiltersOpen?: boolean;
+  onCloseFilters?: () => void;
+  viewKey?: string;
+  setViewKey?: (key: string) => void;
 }
 
 export default function TaskList({ 
@@ -92,7 +95,10 @@ export default function TaskList({
   onDeleteTask,
   searchQuery,
   setSearchQuery,
-  isFiltersOpen = false
+  isFiltersOpen = false,
+  onCloseFilters,
+  viewKey: propsViewKey,
+  setViewKey: propsSetViewKey
 }: TaskListProps) {
   const [internalSearch, setInternalSearch] = useState('');
   const search = searchQuery !== undefined ? searchQuery : internalSearch;
@@ -105,12 +111,23 @@ export default function TaskList({
   const [dueDateFilter, setDueDateFilter] = useState<string>('all');
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState<boolean>(false);
   
-  // Strong multi-view state key (bind default choice immediately)
-  const [viewKey, setViewKey] = useState<string>(() => {
+  // Strong multi-view state key with fallback and callback triggering
+  const [localViewKey, setLocalViewKey] = useState<string>(() => {
     return localStorage.getItem('smarttask_guest_default_task_view') || 
            localStorage.getItem('smarttask_default_task_view') || 
            'agenda';
   });
+
+  const viewKey = propsViewKey !== undefined ? propsViewKey : localViewKey;
+  const setViewKey = (val: string) => {
+    if (propsSetViewKey) {
+      propsSetViewKey(val);
+    } else {
+      setLocalViewKey(val);
+    }
+    localStorage.setItem('smarttask_guest_default_task_view', val);
+    localStorage.setItem('smarttask_default_task_view', val);
+  };
 
   const [sortBy, setSortBy] = useState<'dueDateAsc' | 'dueDateDesc' | 'priorityDesc' | 'createdAtDesc'>('dueDateAsc');
   const [selectedTaskForDetail, setSelectedTaskForDetail] = useState<Task | null>(null);
@@ -403,10 +420,10 @@ export default function TaskList({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className={`p-4 flex items-start gap-3.5 transition-colors duration-200 border-b border-slate-100 relative ${
+        className={`p-4 flex items-start gap-3.5 transition-all duration-200 border-b border-slate-100 relative ${
           task.completed 
-            ? 'bg-slate-50/50 hover:bg-slate-50/70' 
-            : 'bg-white hover:bg-slate-50/70'
+            ? 'bg-slate-50/30 opacity-60 hover:opacity-85' 
+            : 'bg-white hover:bg-slate-50/60'
         }`}
       >
         {/* Completion Checkbox Button */}
@@ -637,8 +654,8 @@ export default function TaskList({
 
       {/* 2. Unified Search, Quick Filters & Basic Options Area */}
       <div className="space-y-4">
-        {/* Search & Advanced Toggle Row */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        {/* Search & Advanced Toggle Row (Desktop/Large Screens) */}
+        <div className="hidden sm:flex gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
             <input
@@ -666,8 +683,31 @@ export default function TaskList({
           </button>
         </div>
 
-        {/* Basic Filters: Status, Category, Priority, Due Date */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        {/* Search & Filter Toggles Row (Mobile Screens View) */}
+        <div className="flex sm:hidden gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 text-xs outline-none focus:border-red-500 focus:bg-white text-slate-800"
+            />
+          </div>
+          
+          <button
+            type="button"
+            onClick={() => setIsAdvancedFiltersOpen(true)}
+            className={`px-3 py-1.5 text-xs font-semibold border flex items-center justify-center gap-1.5 cursor-pointer transition-colors bg-white border-slate-200 text-slate-600 active:bg-slate-50`}
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            <span>Filters</span>
+          </button>
+        </div>
+
+        {/* Desktop Inline Basic Filters (Hidden on Mobile) */}
+        <div className="hidden sm:grid grid-cols-2 md:grid-cols-4 gap-2">
           {/* Status Select Filter */}
           <div className="flex flex-col px-3 py-1.5 bg-slate-50 border border-slate-200">
             <span className="text-[9px] uppercase font-bold text-slate-400 font-mono tracking-tight leading-none mb-1">Status</span>
@@ -687,7 +727,7 @@ export default function TaskList({
 
           {/* Category Select */}
           <div className="flex flex-col px-3 py-1.5 bg-slate-50 border border-slate-200">
-            <span className="text-[9px] uppercase font-bold text-slate-400 font-mono tracking-tight leading-none mb-1">Folder / Folder</span>
+            <span className="text-[9px] uppercase font-bold text-slate-400 font-mono tracking-tight leading-none mb-1">Category</span>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
@@ -731,7 +771,7 @@ export default function TaskList({
           </div>
         </div>
 
-        {/* Saved pills selection row */}
+        {/* Saved Pills/Quick Filters Row (Visible on both) */}
         <div className="flex flex-wrap items-center gap-1.5 pt-1.5">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono mr-1">
             Quick Filters:
@@ -767,14 +807,14 @@ export default function TaskList({
           )}
         </div>
 
-        {/* Collapsible drawer for advanced filters (Project, Sort) */}
+        {/* Collapsible drawer for advanced filters - Desktop Only */}
         <AnimatePresence initial={false}>
           {(isAdvancedFiltersOpen || isFiltersOpen) && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
+              className="hidden sm:block overflow-hidden"
             >
               <div className="pt-3 grid grid-cols-1 md:grid-cols-2 gap-3.5 bg-slate-50/50 p-3.5 border border-slate-200/60 mt-1">
                 {/* Project Select */}
@@ -815,6 +855,175 @@ export default function TaskList({
                 </div>
               </div>
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Mobile Bottom Sheet Modal (Only visible on Mobile screens) */}
+        <AnimatePresence>
+          {(isAdvancedFiltersOpen || isFiltersOpen) && (
+            <div className="fixed inset-0 z-50 flex items-end justify-center sm:hidden">
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => {
+                  setIsAdvancedFiltersOpen(false);
+                  if (onCloseFilters) onCloseFilters();
+                }}
+                className="absolute inset-0 bg-[#1A1A1A]/40 backdrop-blur-xs"
+              />
+              
+              {/* Slide-Up Panel Content */}
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 230 }}
+                className="relative w-full bg-white rounded-t-2xl border-t border-slate-250 shadow-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto z-10 font-sans"
+              >
+                {/* Horizontal Drag Feedback bar */}
+                <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto" />
+
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-[#1A1A1A] uppercase tracking-wider font-sans">Filter Directory</span>
+                    <span className="text-[10px] text-slate-400 mt-0.5">Refine visible agenda records</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAdvancedFiltersOpen(false);
+                      if (onCloseFilters) onCloseFilters();
+                    }}
+                    className="px-2.5 py-1 bg-slate-100 hover:bg-slate-250 text-[#1a1a1a] text-[10px] font-mono font-bold uppercase select-none cursor-pointer"
+                  >
+                    Close
+                  </button>
+                </div>
+
+                <div className="space-y-3.5 pt-1">
+                  {/* Status */}
+                  <div className="flex flex-col px-3 py-2 bg-slate-50 border border-slate-200">
+                    <span className="text-[9px] uppercase font-bold text-slate-400 font-mono tracking-tight leading-none mb-1">Status</span>
+                    <select
+                      value={selectedStatus}
+                      onChange={(e) => setSelectedStatus(e.target.value)}
+                      className="bg-transparent border-none outline-none text-xs font-semibold text-slate-700 cursor-pointer w-full p-0"
+                    >
+                      <option value="all">Any Status</option>
+                      <option value="Not Started">Not Started</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Waiting / Blocked">Blocked</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  </div>
+
+                  {/* Category */}
+                  <div className="flex flex-col px-3 py-2 bg-slate-50 border border-slate-200">
+                    <span className="text-[9px] uppercase font-bold text-slate-400 font-mono tracking-tight leading-none mb-1">Category</span>
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      className="bg-transparent border-none outline-none text-xs font-semibold text-slate-700 cursor-pointer w-full p-0"
+                    >
+                      <option value="all">Any Category</option>
+                      {categories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Priority */}
+                  <div className="flex flex-col px-3 py-2 bg-slate-50 border border-slate-200">
+                    <span className="text-[9px] uppercase font-bold text-slate-400 font-mono tracking-tight leading-none mb-1">Priority Rank</span>
+                    <select
+                      value={selectedPriority}
+                      onChange={(e) => setSelectedPriority(e.target.value)}
+                      className="bg-transparent border-none outline-none text-xs font-semibold text-slate-700 cursor-pointer w-full p-0"
+                    >
+                      <option value="all">Any Urgency</option>
+                      <option value="high">High Priority</option>
+                      <option value="medium">Medium Priority</option>
+                      <option value="low">Low Priority</option>
+                    </select>
+                  </div>
+
+                  {/* Timeline */}
+                  <div className="flex flex-col px-3 py-2 bg-slate-50 border border-slate-200">
+                    <span className="text-[9px] uppercase font-bold text-slate-400 font-mono tracking-tight leading-none mb-1">Due Deadline</span>
+                    <select
+                      value={dueDateFilter}
+                      onChange={(e) => setDueDateFilter(e.target.value)}
+                      className="bg-transparent border-none outline-none text-xs font-semibold text-slate-700 cursor-pointer w-full p-0"
+                    >
+                      <option value="all">Any Date</option>
+                      <option value="today">Due Today</option>
+                      <option value="thisWeek">Due This Week</option>
+                      <option value="overdue">Overdue Only</option>
+                    </select>
+                  </div>
+
+                  {/* Project Context */}
+                  <div className="flex flex-col px-3 py-2 bg-slate-50 border border-slate-200">
+                    <span className="text-[9px] uppercase font-bold text-slate-400 font-mono tracking-tight leading-none mb-1">Project Scope</span>
+                    <select
+                      value={selectedProject}
+                      onChange={(e) => setSelectedProject(e.target.value)}
+                      className="bg-transparent border-none outline-none text-xs font-semibold text-slate-700 cursor-pointer w-full p-0"
+                    >
+                      <option value="all">All Projects</option>
+                      <option value="none">No Project Context</option>
+                      {projects.map(p => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Sort Selection */}
+                  <div className="flex flex-col px-3 py-2 bg-slate-50 border border-slate-200">
+                    <span className="text-[9px] uppercase font-bold text-slate-400 font-mono tracking-tight leading-none mb-1">Sort Priority</span>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as any)}
+                      className="bg-transparent border-none outline-none text-xs font-semibold text-slate-700 cursor-pointer w-full p-0"
+                    >
+                      <option value="dueDateAsc">Due Date: Soonest First</option>
+                      <option value="dueDateDesc">Due Date: Latest First</option>
+                      <option value="priorityDesc">Priority Rank: High Focus</option>
+                      <option value="createdAtDesc">Creation Index: Newest</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDueDateFilter('all');
+                      setSelectedStatus('all');
+                      setSelectedPriority('all');
+                      setSelectedCategory('all');
+                      setSelectedProject('all');
+                    }}
+                    className="py-2.5 border border-slate-200 text-slate-500 font-bold text-xs uppercase tracking-wider rounded-none cursor-pointer hover:bg-slate-50"
+                  >
+                    Clear All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAdvancedFiltersOpen(false);
+                      if (onCloseFilters) onCloseFilters();
+                    }}
+                    className="py-2.5 bg-[#C2410C] hover:bg-[#a1350a] text-white font-bold text-xs uppercase tracking-wider rounded-none cursor-pointer"
+                  >
+                    Apply Filters
+                  </button>
+                </div>
+              </motion.div>
+            </div>
           )}
         </AnimatePresence>
       </div>
