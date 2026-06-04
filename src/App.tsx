@@ -767,39 +767,6 @@ export default function App() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto md:justify-end">
-            {/* Global Search integrated Directly */}
-            <div className="relative flex-1 sm:w-44 md:w-56 min-w-[150px]">
-              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
-              <input
-                id="global-nav-search"
-                type="text"
-                placeholder="Search priorities..."
-                value={searchQueryGlobal}
-                onChange={(e) => {
-                  setSearchQueryGlobal(e.target.value);
-                  if (currentView !== 'agenda') setCurrentView('agenda');
-                }}
-                className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 text-xs font-sans outline-none focus:border-[#C2410C]"
-              />
-            </div>
-
-            {/* Collapsible Filters Toggle */}
-            <button
-              onClick={() => {
-                setIsGlobalFilterOpen(!isGlobalFilterOpen);
-                if (currentView !== 'agenda') setCurrentView('agenda');
-              }}
-              className={`px-3.5 py-1.5 text-xs font-semibold tracking-tight transition-colors cursor-pointer flex items-center justify-center gap-1.5 border ${
-                isGlobalFilterOpen 
-                  ? 'bg-[#C2410C]/10 border-[#C2410C] text-[#C2410C]' 
-                  : 'bg-white border-slate-200 text-[#1A1A1A] hover:bg-slate-50'
-              }`}
-              title="Toggle filter controls"
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              <span>Filters</span>
-            </button>
-
             {/* Quick Compose / Add Task Action */}
             <button
               onClick={() => {

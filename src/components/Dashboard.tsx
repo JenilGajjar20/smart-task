@@ -567,10 +567,16 @@ export default function Dashboard({ tasks, onSelectTab, activeTab, view = 'summa
               📅 Upcoming Deadlines
             </span>
             
-            <div className="space-y-2 max-h-[190px] overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
               {upcomingDeadlinesList.length > 0 ? (
-                upcomingDeadlinesList.slice(0, 4).map(t => {
-                  const daysLeft = Math.ceil((t.dueDate.toDate().getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                upcomingDeadlinesList.map(t => {
+                  const getCalendarDaysDifference = (d1: Date, d2: Date) => {
+                    const date1 = new Date(d1.getFullYear(), d1.getMonth(), d1.getDate());
+                    const date2 = new Date(d2.getFullYear(), d2.getMonth(), d2.getDate());
+                    const diffTime = date1.getTime() - date2.getTime();
+                    return Math.round(diffTime / (1000 * 60 * 60 * 24));
+                  };
+                  const daysLeft = getCalendarDaysDifference(t.dueDate.toDate(), now);
                   return (
                     <div key={t.id} className="bg-white p-3 border border-[#1A1A1A]/10 flex flex-col justify-between">
                       <h5 className="font-serif text-xs font-bold text-[#1A1A1A] truncate">{t.title}</h5>
@@ -587,11 +593,6 @@ export default function Dashboard({ tasks, onSelectTab, activeTab, view = 'summa
                 <div className="p-4 bg-slate-50 border border-[#1A1A1A]/10 text-center text-xs text-slate-400 italic font-serif">
                   No deadlines scheduled in the coming 72 hours.
                 </div>
-              )}
-              {upcomingDeadlinesList.length > 4 && (
-                <span className="block text-[8px] font-mono text-center text-slate-400 uppercase font-bold">
-                  + {upcomingDeadlinesList.length - 4} other upcoming deadlines
-                </span>
               )}
             </div>
           </div>
