@@ -523,7 +523,7 @@ export default function TaskList({
               </div>
               <div className="w-full bg-slate-100 h-1 border border-slate-200 rounded-none relative">
                 <div 
-                  className={`h-full transition-all duration-300 ${task.completed ? 'bg-slate-300' : 'bg-red-550/80'}`}
+                  className={`h-full transition-all duration-300 ${task.completed ? 'bg-slate-300' : 'bg-red-500'}`}
                   style={{ width: `${(completedSubtasks / totalSubtasks) * 100}%` }}
                 />
               </div>
@@ -532,7 +532,7 @@ export default function TaskList({
 
           {/* Compact Due Date line */}
           <div className="flex items-center gap-1.5 text-[10px] font-medium tracking-tight text-slate-500 font-sans">
-            <CalendarDays className={`h-3.5 w-3.5 ${isOverdue && !task.completed ? 'text-red-505' : 'text-slate-400'}`} />
+            <CalendarDays className={`h-3.5 w-3.5 ${isOverdue && !task.completed ? 'text-red-500' : 'text-slate-400'}`} />
             <span>Due: {formatDate(task.dueDate.toDate())}</span>
           </div>
         </div>
