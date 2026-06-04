@@ -260,7 +260,7 @@ export default function TaskList({
     });
 
     return list;
-  }, [tasks, activeTab, search, selectedPriority, selectedCategory, selectedProject, sortBy]);
+  }, [tasks, activeTab, search, selectedPriority, selectedCategory, selectedStatus, selectedProject, sortBy]);
 
   // Extract all unique project names present in current list of tasks
   const projects = useMemo(() => {
