@@ -133,6 +133,18 @@ export default function TaskList({
   const [selectedTaskForDetail, setSelectedTaskForDetail] = useState<Task | null>(null);
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
+  // Lock body scroll of the background page when the drawer (selectedTaskForDetail) or delete modal (taskToDelete) are open
+  useEffect(() => {
+    if (selectedTaskForDetail || taskToDelete) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedTaskForDetail, taskToDelete]);
+
   // Focus View Pomodoro Timer State
   const [timerSeconds, setTimerSeconds] = useState(1500); // 25 mins
   const [timerRunning, setTimerRunning] = useState(false);

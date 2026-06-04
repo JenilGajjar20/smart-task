@@ -117,15 +117,20 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
   };
 
   const getInitialDueDate = (): string => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(9, 0, 0, 0);
-    return formatDateToInput(tomorrow);
+    return formatDateToInput(new Date());
   };
 
   const [dueDateStr, setDueDateStr] = useState(getInitialDueDate());
   const [reminderActive, setReminderActive] = useState(false);
   const [reminderDateStr, setReminderDateStr] = useState('');
+
+  // Lock body scroll of page while TaskForm is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
 
   // Recurrence states
   const [recurrenceFrequency, setRecurrenceFrequency] = useState<RecurrenceFrequency>('none');
