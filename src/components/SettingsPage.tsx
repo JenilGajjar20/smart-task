@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Settings, ArrowLeft, RefreshCw, Volume2, ShieldCheck, Database, Trash2, Eye, Sliders, Layout } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Task } from '../types';
@@ -24,13 +24,16 @@ export default function SettingsPage({ onBack, triggerToast, tasks, user, onRequ
     return localStorage.getItem(`${baseKey}_dark_mode`) === 'true';
   });
   const [profileNickname, setProfileNickname] = useState<string>(() => {
-    return localStorage.getItem(`${baseKey}_profile_nickname`) || user?.displayName || user?.email?.split('@')[0] || '';
+    const cached = localStorage.getItem(`${baseKey}_profile_nickname`);
+    return cached !== null ? cached : (user?.displayName || user?.email?.split('@')[0] || '');
   });
   const [profileRole, setProfileRole] = useState<string>(() => {
-    return localStorage.getItem(`${baseKey}_profile_role`) || 'Workspace Coordinator';
+    const cached = localStorage.getItem(`${baseKey}_profile_role`);
+    return cached !== null ? cached : 'Workspace Coordinator';
   });
   const [profileStation, setProfileStation] = useState<string>(() => {
-    return localStorage.getItem(`${baseKey}_profile_station`) || 'Primary Hub No. 1';
+    const cached = localStorage.getItem(`${baseKey}_profile_station`);
+    return cached !== null ? cached : 'Primary Hub No. 1';
   });
 
   const [defaultCategory, setDefaultCategory] = useState<string>(() => {
@@ -48,7 +51,8 @@ export default function SettingsPage({ onBack, triggerToast, tasks, user, onRequ
 
   // New Personalization parameters
   const [workspaceName, setWorkspaceName] = useState<string>(() => {
-    return localStorage.getItem(`${baseKey}_workspace_name`) || 'SmartTask';
+    const cached = localStorage.getItem(`${baseKey}_workspace_name`);
+    return cached !== null ? cached : 'SmartTask';
   });
   const [workspaceAvatar, setWorkspaceAvatar] = useState<string>(() => {
     return localStorage.getItem(`${baseKey}_workspace_avatar`) || '📝';
@@ -73,13 +77,51 @@ export default function SettingsPage({ onBack, triggerToast, tasks, user, onRequ
   const recurringTasksCount = tasks.filter(t => t.recurrence && t.recurrence.frequency !== 'none').length;
   const overdueTasksCount = tasks.filter(t => !t.completed && t.dueDate.toDate() < new Date()).length;
 
-  // Save Settings handler
-  const handleSaveSettings = async () => {
-    if (!user) {
-      onRequireAuth();
-      return;
-    }
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const hasMounted = useRef(false);
 
+  // Sync state if user changes/loads later
+  useEffect(() => {
+    if (user) {
+      const uKey = `smarttask_user_${user.uid}`;
+      setTheme(localStorage.getItem(`${uKey}_theme`) || 'editorial');
+      setDarkMode(localStorage.getItem(`${uKey}_dark_mode`) === 'true');
+      const nicknameVal = localStorage.getItem(`${uKey}_profile_nickname`);
+      setProfileNickname(nicknameVal !== null ? nicknameVal : (user.displayName || user.email?.split('@')[0] || ''));
+      const roleVal = localStorage.getItem(`${uKey}_profile_role`);
+      setProfileRole(roleVal !== null ? roleVal : 'Workspace Coordinator');
+      const stationVal = localStorage.getItem(`${uKey}_profile_station`);
+      setProfileStation(stationVal !== null ? stationVal : 'Primary Hub No. 1');
+      setDefaultCategory(localStorage.getItem(`${uKey}_default_category`) || 'Work');
+      setDefaultPriority(localStorage.getItem(`${uKey}_default_priority`) || 'medium');
+      setTimeFormat((localStorage.getItem(`${uKey}_time_format`) as '12h' | '24h') || '24h');
+      setDeskSounds(localStorage.getItem(`${uKey}_desk_sounds`) !== 'false');
+      const wsNameVal = localStorage.getItem(`${uKey}_workspace_name`);
+      setWorkspaceName(wsNameVal !== null ? wsNameVal : 'SmartTask');
+      setWorkspaceAvatar(localStorage.getItem(`${uKey}_workspace_avatar`) || '📝');
+      setDefaultTaskView(localStorage.getItem(`${uKey}_default_task_view`) || 'agenda');
+      setDefaultReminderTime(Number(localStorage.getItem(`${uKey}_default_reminder_time`)) || 60);
+      setLayoutMode((localStorage.getItem(`${uKey}_layout_mode`) as 'compact' | 'spacious') || 'spacious');
+      setFontSize((localStorage.getItem(`${uKey}_font_size`) as 'small' | 'default' | 'large') || 'default');
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      hasMounted.current = true;
+    }, 150);
+    return () => {
+      hasMounted.current = false;
+      clearTimeout(timer);
+    };
+  }, []);
+
+  // Auto-Save Effect
+  useEffect(() => {
+    if (!hasMounted.current) return;
+
+    // 1. Instantly write to localStorage so standard client features update without delay
     localStorage.setItem(`${baseKey}_theme`, theme);
     localStorage.setItem(`${baseKey}_dark_mode`, String(darkMode));
     localStorage.setItem(`${baseKey}_profile_nickname`, profileNickname);
@@ -89,48 +131,61 @@ export default function SettingsPage({ onBack, triggerToast, tasks, user, onRequ
     localStorage.setItem(`${baseKey}_default_priority`, defaultPriority);
     localStorage.setItem(`${baseKey}_time_format`, timeFormat);
     localStorage.setItem(`${baseKey}_desk_sounds`, String(deskSounds));
-
-    // Persist new personalization fields
     localStorage.setItem(`${baseKey}_workspace_name`, workspaceName);
     localStorage.setItem(`${baseKey}_workspace_avatar`, workspaceAvatar);
     localStorage.setItem(`${baseKey}_default_task_view`, defaultTaskView);
     localStorage.setItem(`${baseKey}_default_reminder_time`, String(defaultReminderTime));
     localStorage.setItem(`${baseKey}_layout_mode`, layoutMode);
     localStorage.setItem(`${baseKey}_font_size`, fontSize);
-    
-    // Custom post event to trigger updates across tabs/app instantly
+
+    // 2. Instantly dispatch custom update event so top components/Header immediately reflect changes
     window.dispatchEvent(new Event('smarttask_settings_updated'));
 
-    if (user) {
-      try {
-        await setDoc(doc(db, 'settings', user.uid), {
-          userId: user.uid,
-          theme,
-          darkMode,
-          profileNickname,
-          profileRole,
-          profileStation,
-          defaultCategory,
-          defaultPriority,
-          timeFormat,
-          deskSounds,
-          // Sync new personalization fields
-          workspaceName,
-          workspaceAvatar,
-          defaultTaskView,
-          defaultReminderTime,
-          layoutMode,
-          fontSize,
-        });
-        triggerToast('Workspace settings successfully synchronized to the cloud.');
-      } catch (err: any) {
-        console.warn('Real-time settings synchronization failed: ', err);
-        triggerToast('Settings updated locally (cloud storage skipped).', 'error');
+    // 3. Mark save as in-progress (subtle feedback)
+    setSaveStatus('saving');
+    setErrorMessage(null);
+
+    // 4. Debounce Firestore sync so typing text fields is fluid
+    const handler = setTimeout(async () => {
+      if (user) {
+        try {
+          await setDoc(doc(db, 'settings', user.uid), {
+            userId: user.uid,
+            theme,
+            darkMode,
+            profileNickname,
+            profileRole,
+            profileStation,
+            defaultCategory,
+            defaultPriority,
+            timeFormat,
+            deskSounds,
+            workspaceName,
+            workspaceAvatar,
+            defaultTaskView,
+            defaultReminderTime,
+            layoutMode,
+            fontSize,
+          });
+          setSaveStatus('saved');
+        } catch (err: any) {
+          console.warn('Real-time cloud settings synchronization failed: ', err);
+          setSaveStatus('error');
+          setErrorMessage('Cloud sync failed');
+        }
+      } else {
+        // Guest user local save is already complete
+        setSaveStatus('saved');
       }
-    } else {
-      triggerToast('Workspace configurations successfully updated locally.');
-    }
-  };
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(handler);
+  }, [
+    theme, darkMode, profileNickname, profileRole, profileStation,
+    defaultCategory, defaultPriority, timeFormat, deskSounds,
+    workspaceName, workspaceAvatar, defaultTaskView, defaultReminderTime,
+    layoutMode, fontSize, baseKey, user
+  ]);
 
   // Test system speaker bell using Web Audio API!
   const ringDeskBell = () => {
@@ -197,12 +252,28 @@ export default function SettingsPage({ onBack, triggerToast, tasks, user, onRequ
               </h3>
               <p className="text-xs text-slate-500 font-serif italic mt-0.5">Customize daily standards, interfaces, and clock telemetry.</p>
             </div>
-            <button 
-              onClick={handleSaveSettings}
-              className="px-3 py-1.5 bg-[#C2410C] border border-[#C2410C] hover:bg-transparent hover:text-[#C2410C] text-white text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer"
-            >
-              Apply Changes
-            </button>
+            <div className="flex items-center gap-2 min-h-[30px]" id="autosave-status-container">
+              {saveStatus === 'saving' && (
+                <span className="px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider font-mono text-[#C2410C] bg-[#C2410C]/5 border border-[#C2410C]/20 animate-pulse" id="autosave-saving-indicator">
+                  ◌ Saving...
+                </span>
+              )}
+              {saveStatus === 'saved' && (
+                <span className="px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider font-mono text-emerald-800 bg-emerald-50 border border-emerald-800/20" id="autosave-saved-indicator">
+                  ✓ Changes saved automatically
+                </span>
+              )}
+              {saveStatus === 'idle' && (
+                <span className="px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider font-mono text-emerald-800 bg-emerald-50 border border-emerald-800/20" id="autosave-idle-indicator">
+                  ✓ Saved
+                </span>
+              )}
+              {saveStatus === 'error' && (
+                <span className="px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider font-mono text-rose-700 bg-rose-50 border border-rose-500/20" id="autosave-error-indicator" title={errorMessage || 'Synchronization failure.'}>
+                  ⚠ Saving failed: {errorMessage || 'offline'}
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="space-y-4">

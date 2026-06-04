@@ -165,9 +165,16 @@ export default function App() {
     // Load local cache immediately for zero-lag UI feedback
     const cachedTheme = localStorage.getItem(`${baseKey}_theme`) || 'editorial';
     const cachedDarkMode = localStorage.getItem(`${baseKey}_dark_mode`) === 'true';
-    const cachedNickname = localStorage.getItem(`${baseKey}_profile_nickname`) || user.displayName || '';
-    const cachedRole = localStorage.getItem(`${baseKey}_profile_role`) || 'Workspace Coordinator';
-    const cachedStation = localStorage.getItem(`${baseKey}_profile_station`) || 'Primary Hub No. 1';
+    
+    const cachedNicknameItem = localStorage.getItem(`${baseKey}_profile_nickname`);
+    const cachedNickname = cachedNicknameItem !== null ? cachedNicknameItem : (user.displayName || '');
+    
+    const cachedRoleItem = localStorage.getItem(`${baseKey}_profile_role`);
+    const cachedRole = cachedRoleItem !== null ? cachedRoleItem : 'Workspace Coordinator';
+    
+    const cachedStationItem = localStorage.getItem(`${baseKey}_profile_station`);
+    const cachedStation = cachedStationItem !== null ? cachedStationItem : 'Primary Hub No. 1';
+    
     const cachedWorkspaceName = localStorage.getItem(`${baseKey}_workspace_name`) || 'SmartTask';
     const cachedWorkspaceAvatar = localStorage.getItem(`${baseKey}_workspace_avatar`) || '📝';
     const cachedDefaultTaskView = localStorage.getItem(`${baseKey}_default_task_view`) || 'agenda';
@@ -253,9 +260,16 @@ export default function App() {
       const baseKey = user ? `smarttask_user_${user.uid}` : 'smarttask_guest';
       setTheme(localStorage.getItem(`${baseKey}_theme`) || 'editorial');
       setDarkMode(localStorage.getItem(`${baseKey}_dark_mode`) === 'true');
-      setProfileNickname(localStorage.getItem(`${baseKey}_profile_nickname`) || (user ? '' : 'Guest Contributor'));
-      setProfileRole(localStorage.getItem(`${baseKey}_profile_role`) || (user ? 'Workspace Coordinator' : 'Workspace Observer'));
-      setProfileStation(localStorage.getItem(`${baseKey}_profile_station`) || (user ? 'Primary Hub No. 1' : 'Public Reading Desk'));
+      
+      const nicknameVal = localStorage.getItem(`${baseKey}_profile_nickname`);
+      setProfileNickname(nicknameVal !== null ? nicknameVal : (user ? '' : 'Guest Contributor'));
+      
+      const roleVal = localStorage.getItem(`${baseKey}_profile_role`);
+      setProfileRole(roleVal !== null ? roleVal : (user ? 'Workspace Coordinator' : 'Workspace Observer'));
+      
+      const stationVal = localStorage.getItem(`${baseKey}_profile_station`);
+      setProfileStation(stationVal !== null ? stationVal : (user ? 'Primary Hub No. 1' : 'Public Reading Desk'));
+      
       setWorkspaceName(localStorage.getItem(`${baseKey}_workspace_name`) || 'SmartTask');
       setWorkspaceAvatar(localStorage.getItem(`${baseKey}_workspace_avatar`) || '📝');
       setDefaultTaskView(localStorage.getItem(`${baseKey}_default_task_view`) || 'agenda');
