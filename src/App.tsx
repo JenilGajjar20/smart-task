@@ -9,7 +9,8 @@ import {
 import { 
   collection, query, where, addDoc, updateDoc, doc, deleteDoc, onSnapshot, serverTimestamp, getDocs, Timestamp 
 } from 'firebase/firestore';
-import { Task, Priority, Category, OperationType, RecurrenceSettings } from './types';
+import { Task, Priority, Category, OperationType, RecurrenceSettings, CustomCategory } from './types';
+import { DEFAULT_CATEGORIES } from './utils/categories';
 import AuthPage from './components/AuthPage';
 import AuthModal from './components/AuthModal';
 import Dashboard from './components/Dashboard';
@@ -129,6 +130,50 @@ export default function App() {
   const [defaultReminderTime, setDefaultReminderTime] = useState<number>(60);
   const [layoutMode, setLayoutMode] = useState<'compact' | 'spacious'>('spacious');
   const [fontSize, setFontSize] = useState<'small' | 'default' | 'large'>('default');
+
+  // Custom categories state and persist logic
+  const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
+
+  useEffect(() => {
+    const baseKey = user ? `smarttask_user_${user.uid}` : 'smarttask_guest';
+    const saved = localStorage.getItem(`${baseKey}_custom_categories`);
+    if (saved) {
+      try {
+        setCustomCategories(JSON.parse(saved));
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      setCustomCategories([]);
+    }
+  }, [user]);
+
+  const handleSaveCustomCategories = (newCategories: CustomCategory[]) => {
+    const baseKey = user ? `smarttask_user_${user.uid}` : 'smarttask_guest';
+    localStorage.setItem(`${baseKey}_custom_categories`, JSON.stringify(newCategories));
+    setCustomCategories(newCategories);
+  };
+
+  const handleUpdateTaskCategory = async (oldCat: string, newCat: string) => {
+    if (user) {
+      try {
+        const affected = tasks.filter(t => t.category === oldCat);
+        for (const task of affected) {
+          const taskRef = doc(db, 'tasks', task.id);
+          await updateDoc(taskRef, { category: newCat, updatedAt: serverTimestamp() });
+        }
+        triggerToast?.(`Moved ${affected.length} task(s) to ${newCat}`, 'success');
+      } catch (err) {
+        handleFirestoreError(err, OperationType.UPDATE, 'tasks');
+        triggerToast?.('Failed to reallocate tasks', 'error');
+      }
+    } else {
+      const updated = tasks.map(t => t.category === oldCat ? { ...t, category: newCat } : t);
+      setTasks(updated);
+      const affectedCount = tasks.filter(t => t.category === oldCat).length;
+      triggerToast?.(`Moved ${affectedCount} task(s) to ${newCat}`, 'success');
+    }
+  };
 
   // 1. Listen for auth state changes
   useEffect(() => {
@@ -900,6 +945,9 @@ export default function App() {
               triggerToast={triggerToast} 
               tasks={tasks}
               user={user}
+              customCategories={customCategories}
+              onSaveCustomCategories={handleSaveCustomCategories}
+              onUpdateTaskCategory={handleUpdateTaskCategory}
               onRequireAuth={() => {
                 setIsAuthModalOpen(true);
                 triggerToast('Authentication Required. Please connect your account to modify workspace settings.', 'error');
@@ -932,6 +980,7 @@ export default function App() {
               <Dashboard 
                 tasks={tasks} 
                 activeTab={activeTab}
+                customCategories={customCategories}
                 onSelectTab={(tab) => {
                   setActiveTab(tab);
                   setCurrentView('agenda');
@@ -945,6 +994,7 @@ export default function App() {
               <Dashboard 
                 tasks={tasks} 
                 activeTab={activeTab}
+                customCategories={customCategories}
                 onSelectTab={(tab) => setActiveTab(tab)} 
                 view="summary"
               />
@@ -974,6 +1024,7 @@ export default function App() {
                 <TaskList
                   tasks={tasks}
                   activeTab={activeTab}
+                  customCategories={customCategories}
                   onToggleComplete={handleToggleComplete}
                   onEditTask={handleEditInit}
                   onDeleteTask={handleDeleteTask}
@@ -1021,6 +1072,7 @@ export default function App() {
           <TaskForm
             taskToEdit={taskToEdit}
             existingProjects={existingProjects}
+            customCategories={customCategories}
             onSave={handleSaveTask}
             onClose={() => {
               setIsFormOpen(false);

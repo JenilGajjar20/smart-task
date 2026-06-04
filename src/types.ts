@@ -2,7 +2,15 @@ import { Timestamp } from 'firebase/firestore';
 
 export type Priority = 'low' | 'medium' | 'high';
 
-export type Category = 'Work' | 'Personal' | 'Education' | 'Health' | 'Shopping' | 'Finance' | 'Other';
+export type Category = string;
+
+export interface CustomCategory {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  isDefault?: boolean;
+}
 
 export type RecurrenceFrequency = 'none' | 'daily' | 'weekly' | 'monthly' | 'custom';
 export type RecurrenceUnit = 'days' | 'weeks' | 'months';
