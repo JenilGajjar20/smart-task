@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  auth, db, logoutUser, handleFirestoreError 
+  auth, db, logoutUser, handleFirestoreError, signInWithGoogle, getAccessToken
 } from './firebase';
 import { 
   onAuthStateChanged, User 
@@ -92,6 +92,7 @@ export default function App() {
   // Lock toggles to prevent duplicate execution & race conditions
   const [activeToggles, setActiveToggles] = useState<Record<string, boolean>>({});
   const togglingTaskIds = useRef<Set<string>>(new Set());
+  const sendingEmailTaskIds = useRef<Set<string>>(new Set());
 
   // Modal form states
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -174,6 +175,127 @@ export default function App() {
       triggerToast?.(`Moved ${affectedCount} task(s) to ${newCat}`, 'success');
     }
   };
+
+  const [hasEmailToken, setHasEmailToken] = useState(false);
+
+  // Check if we have an active email token
+  useEffect(() => {
+    const token = getAccessToken();
+    setHasEmailToken(!!token);
+  }, [user]);
+
+  const handleEnableEmailAlerts = async () => {
+    try {
+      const loggedUser = await signInWithGoogle();
+      const token = getAccessToken();
+      if (token) {
+        setHasEmailToken(true);
+        triggerToast?.('Overdue notifications activated successfully!', 'success');
+      } else {
+        triggerToast?.('Unable to secure a valid mailing token. Try again.', 'error');
+      }
+    } catch (err) {
+      console.error('Failed to enable email alerts:', err);
+      triggerToast?.('Google authentication failed. Email access denied.', 'error');
+    }
+  };
+
+  // Overdue Email trigger mechanism
+  useEffect(() => {
+    const token = getAccessToken();
+    if (!token || !user || !tasksLoaded) return;
+
+    const runOverdueEmailCheck = async () => {
+      const overdueTasks = tasks.filter(t => {
+        const isCompleted = t.status ? t.status === 'Completed' : t.completed;
+        const isCancelled = t.status === 'Cancelled';
+        if (isCompleted || isCancelled) return false;
+
+        const due = t.dueDate.toDate();
+        const isOverdue = due < new Date();
+        return isOverdue && !t.overdueEmailSent && !sendingEmailTaskIds.current.has(t.id);
+      });
+
+      if (overdueTasks.length === 0) return;
+
+      for (const t of overdueTasks) {
+        if (sendingEmailTaskIds.current.has(t.id)) continue;
+        sendingEmailTaskIds.current.add(t.id);
+
+        try {
+          console.log(`Attempting to dispatch email for overdue task: ${t.id}`);
+          const recipientEmail = user.email || '';
+          if (!recipientEmail) {
+            sendingEmailTaskIds.current.delete(t.id);
+            continue;
+          }
+
+          // Helper to safely base64URL encode unicode
+          const encodeBase64Url = (str: string) => {
+            const base64 = btoa(unescape(encodeURIComponent(str)));
+            return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+          };
+
+          const customMatch = (customCategories || []).find(c => c.id === t.category || c.name === t.category);
+          const solvedCategoryName = customMatch ? customMatch.name : t.category;
+
+          const emailLines = [
+            `To: ${recipientEmail}`,
+            'Subject: SmartTask Alert: Overdue Agenda Item',
+            'Content-Type: text/html; charset=utf-8',
+            'MIME-Version: 1.0',
+            '',
+            `<div>`,
+            `  <p>Hello,</p>`,
+            `  <p>This is an automated notification from <strong>SmartTask</strong>.</p>`,
+            `  <p>The following task is currently <strong>overdue</strong>:</p>`,
+            `  <ul style="border-left: 3px solid #C2410C; padding-left: 10px; list-style-type: none;">`,
+            `    <li><strong>Task Name:</strong> ${t.title}</li>`,
+            `    <li><strong>Category:</strong> ${solvedCategoryName}</li>`,
+            `    <li><strong>Due Date:</strong> ${t.dueDate.toDate().toLocaleString()}</li>`,
+            `  </ul>`,
+            `  <p>Please log in and update or complete this item.</p>`,
+            `  <p>Best regards,<br/>SmartTask Workspace Bot</p>`,
+            `</div>`
+          ];
+
+          const rawMessage = emailLines.join('\r\n');
+          const encodedRaw = encodeBase64Url(rawMessage);
+
+          const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              raw: encodedRaw
+            })
+          });
+
+          if (!response.ok) {
+            const errBody = await response.text();
+            throw new Error(`Gmail API response status: ${response.status}, payload: ${errBody}`);
+          }
+
+          // Email sent successfully! Mark task as overdueEmailSent in DB
+          const docRef = doc(db, 'tasks', t.id);
+          await updateDoc(docRef, {
+            overdueEmailSent: true,
+            updatedAt: serverTimestamp()
+          });
+
+          triggerToast?.(`Notification email dispatched to ${recipientEmail} for task "${t.title}"`, 'success');
+        } catch (mailErr) {
+          console.error(`Failed to send overdue email for ${t.id}:`, mailErr);
+          // Delete from sending set on error so it can be retried on subsequent user interactions
+          sendingEmailTaskIds.current.delete(t.id);
+        }
+      }
+    };
+
+    runOverdueEmailCheck();
+  }, [tasks, user, tasksLoaded, hasEmailToken, customCategories]);
 
   // 1. Listen for auth state changes
   useEffect(() => {
@@ -408,6 +530,7 @@ export default function App() {
             project: data.project || null,
             createdAt: data.createdAt,
             updatedAt: data.updatedAt,
+            overdueEmailSent: data.overdueEmailSent || false,
             status: data.status,
             attachments: data.attachments || [],
             subtasks: data.subtasks || [],
@@ -981,6 +1104,9 @@ export default function App() {
                 tasks={tasks} 
                 activeTab={activeTab}
                 customCategories={customCategories}
+                userMail={user ? user.email || '' : ''}
+                hasEmailToken={hasEmailToken}
+                onEnableEmailAlerts={handleEnableEmailAlerts}
                 onSelectTab={(tab) => {
                   setActiveTab(tab);
                   setCurrentView('agenda');
@@ -995,6 +1121,9 @@ export default function App() {
                 tasks={tasks} 
                 activeTab={activeTab}
                 customCategories={customCategories}
+                userMail={user ? user.email || '' : ''}
+                hasEmailToken={hasEmailToken}
+                onEnableEmailAlerts={handleEnableEmailAlerts}
                 onSelectTab={(tab) => setActiveTab(tab)} 
                 view="summary"
               />

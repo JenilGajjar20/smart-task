@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Calendar, Flag, Tag, Sparkles, Clock, Folder } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
-import { Task, Priority, Category, RecurrenceFrequency, RecurrenceUnit, RecurrenceSettings, Attachment } from '../types';
+import { Task, Priority, Category, RecurrenceFrequency, RecurrenceUnit, RecurrenceSettings, Attachment, CustomCategory } from '../types';
 import { saveFileToLocal } from '../utils/fileStorage';
 
 interface TaskFormProps {
@@ -37,9 +37,10 @@ interface TaskFormProps {
     attachments?: Attachment[];
   }) => Promise<void>;
   onClose: () => void;
+  customCategories?: CustomCategory[];
 }
 
-export default function TaskForm({ taskToEdit, existingProjects = [], onSave, onClose }: TaskFormProps) {
+export default function TaskForm({ taskToEdit, existingProjects = [], onSave, onClose, customCategories = [] }: TaskFormProps) {
   const [formMode, setFormMode] = useState<'quick' | 'advanced'>(taskToEdit ? 'advanced' : 'quick');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -385,7 +386,39 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
     }
   };
 
-  const categories: Category[] = ['Work', 'Personal', 'Education', 'Health', 'Shopping', 'Finance', 'Other'];
+  const categories = React.useMemo(() => {
+    const list = ['Work', 'Personal', 'Education', 'Health', 'Shopping', 'Finance', 'Other'];
+    (customCategories || []).forEach(cat => {
+      if (!list.includes(cat.id)) {
+        list.push(cat.id);
+      }
+    });
+    return list;
+  }, [customCategories]);
+
+  const getCategoryInfo = (categoryName: string) => {
+    const customMatch = (customCategories || []).find(c => c.id === categoryName || c.name === categoryName);
+    if (customMatch) return customMatch;
+
+    const defaultMatch = [
+      { id: 'Work', name: 'Work', icon: 'Briefcase', color: '#1B4D3E', isDefault: true },
+      { id: 'Personal', name: 'Personal', icon: 'User', color: '#1E3A8A', isDefault: true },
+      { id: 'Education', name: 'Education', icon: 'GraduationCap', color: '#6D28D9', isDefault: true },
+      { id: 'Health', name: 'Health', icon: 'HeartPulse', color: '#B91C1C', isDefault: true },
+      { id: 'Shopping', name: 'Shopping', icon: 'ShoppingBag', color: '#BE185D', isDefault: true },
+      { id: 'Finance', name: 'Finance', icon: 'Coins', color: '#B45309', isDefault: true },
+      { id: 'Other', name: 'Other', icon: 'Folder', color: '#4B5563', isDefault: true }
+    ].find(c => c.id === categoryName || c.name === categoryName);
+
+    if (defaultMatch) return defaultMatch;
+
+    return {
+      id: 'Other',
+      name: categoryName || 'Other',
+      icon: 'Folder',
+      color: '#4B5563'
+    };
+  };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto font-sans" id="task-form-modal">
@@ -499,9 +532,10 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
                       onChange={(e) => setCategory(e.target.value as Category)}
                       className="w-full px-4 py-3 bg-white border border-[#1A1A1A] rounded-none outline-none text-[#1A1A1A] text-sm font-serif transition-all cursor-pointer"
                     >
-                      {categories.map((cat) => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
+                      {categories.map((cat) => {
+                        const info = getCategoryInfo(cat);
+                        return <option key={cat} value={cat}>{info.name}</option>;
+                      })}
                     </select>
                   </div>
 
@@ -582,9 +616,10 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
                               onChange={(e) => setCategory(e.target.value as Category)}
                               className="w-full px-4 py-3 bg-[#F9F8F6] border border-[#1A1A1A] rounded-none outline-none text-[#1A1A1A] text-sm font-serif transition-all cursor-pointer"
                             >
-                              {categories.map((cat) => (
-                                <option key={cat} value={cat}>{cat}</option>
-                              ))}
+                              {categories.map((cat) => {
+                                const info = getCategoryInfo(cat);
+                                return <option key={cat} value={cat}>{info.name}</option>;
+                              })}
                             </select>
                           </div>
 

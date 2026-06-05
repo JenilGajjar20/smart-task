@@ -1,16 +1,29 @@
 import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
 import { CheckCircle2, Clock, AlertTriangle, ListChecks, Calendar, PieChart, Sparkles } from 'lucide-react';
-import { Task } from '../types';
+import { Task, CustomCategory } from '../types';
 
 interface DashboardProps {
   tasks: Task[];
   onSelectTab: (tab: 'all' | 'pending' | 'completed' | 'overdue') => void;
   activeTab: string;
   view?: 'summary' | 'insights';
+  customCategories?: CustomCategory[];
+  userMail?: string;
+  hasEmailToken?: boolean;
+  onEnableEmailAlerts?: () => void;
 }
 
-export default function Dashboard({ tasks, onSelectTab, activeTab, view = 'summary' }: DashboardProps) {
+export default function Dashboard({ 
+  tasks, 
+  onSelectTab, 
+  activeTab, 
+  view = 'summary',
+  customCategories = [],
+  userMail,
+  hasEmailToken = false,
+  onEnableEmailAlerts
+}: DashboardProps) {
   const nonCancelledTasks = useMemo(() => tasks.filter(t => t.status !== 'Cancelled'), [tasks]);
   const total = nonCancelledTasks.length;
   
@@ -24,6 +37,30 @@ export default function Dashboard({ tasks, onSelectTab, activeTab, view = 'summa
     const due = t.dueDate.toDate();
     return due < now;
   }).length, [nonCancelledTasks, now]);
+
+  const getCategoryInfo = (categoryName: string) => {
+    const customMatch = (customCategories || []).find(c => c.id === categoryName || c.name === categoryName);
+    if (customMatch) return customMatch;
+
+    const defaultMatch = [
+      { id: 'Work', name: 'Work', icon: 'Briefcase', color: '#1B4D3E', isDefault: true },
+      { id: 'Personal', name: 'Personal', icon: 'User', color: '#1E3A8A', isDefault: true },
+      { id: 'Education', name: 'Education', icon: 'GraduationCap', color: '#6D28D9', isDefault: true },
+      { id: 'Health', name: 'Health', icon: 'HeartPulse', color: '#B91C1C', isDefault: true },
+      { id: 'Shopping', name: 'Shopping', icon: 'ShoppingBag', color: '#BE185D', isDefault: true },
+      { id: 'Finance', name: 'Finance', icon: 'Coins', color: '#B45309', isDefault: true },
+      { id: 'Other', name: 'Other', icon: 'Folder', color: '#4B5563', isDefault: true }
+    ].find(c => c.id === categoryName || c.name === categoryName);
+
+    if (defaultMatch) return defaultMatch;
+
+    return {
+      id: 'Other',
+      name: categoryName || 'Other',
+      icon: 'Folder',
+      color: '#4B5563'
+    };
+  };
 
   // Today Command Center Intelligence calculations
   const suggestedFocusTask = useMemo(() => {
@@ -89,9 +126,15 @@ export default function Dashboard({ tasks, onSelectTab, activeTab, view = 'summa
   const categories: Record<string, number> = {
     Work: 0, Personal: 0, Education: 0, Health: 0, Shopping: 0, Finance: 0, Other: 0
   };
+  (customCategories || []).forEach(cat => {
+    categories[cat.id] = 0;
+  });
   nonCancelledTasks.forEach(t => {
     const isCompleted = t.status ? t.status === 'Completed' : t.completed;
-    if (!isCompleted && categories[t.category] !== undefined) {
+    if (!isCompleted) {
+      if (categories[t.category] === undefined) {
+        categories[t.category] = 0;
+      }
       categories[t.category]++;
     }
   });
@@ -451,15 +494,23 @@ export default function Dashboard({ tasks, onSelectTab, activeTab, view = 'summa
             <div className="py-8 text-center text-xs text-slate-400 italic">No active category loads.</div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 xl:grid-cols-2 gap-2 max-h-[140px] overflow-y-auto pr-1">
-              {activeCategories.map(([cat, count]) => (
-                <div key={cat} className="flex items-center justify-between p-2.5 bg-white border border-[#1A1A1A] rounded-none gap-2">
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 truncate" title={cat}>{cat}</span>
-                    <span className="text-[8px] text-slate-400 uppercase tracking-widest font-mono">Context</span>
+              {activeCategories.map(([cat, count]) => {
+                const info = getCategoryInfo(cat);
+                return (
+                  <div key={cat} className="flex items-center justify-between p-2.5 bg-white border border-[#1A1A1A] rounded-none gap-2">
+                    <div className="flex flex-col min-w-0 font-sans">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 truncate" title={info.name}>{info.name}</span>
+                      <span className="text-[8px] text-slate-400 uppercase tracking-widest font-mono">Context</span>
+                    </div>
+                    <span 
+                      className="text-lg font-serif italic font-semibold shrink-0" 
+                      style={{ color: info.color }}
+                    >
+                      {count}
+                    </span>
                   </div>
-                  <span className="text-lg font-serif italic text-[#C2410C] font-semibold shrink-0">{count}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -501,7 +552,7 @@ export default function Dashboard({ tasks, onSelectTab, activeTab, view = 'summa
                   {suggestedFocusTask.title}
                 </h4>
                 <div className="flex items-center gap-2 text-[9px] font-mono text-slate-500">
-                  <span>Folder: {suggestedFocusTask.category}</span>
+                  <span>Folder: {getCategoryInfo(suggestedFocusTask.category).name}</span>
                   <span>·</span>
                   <span className="text-red-700 bg-red-50 px-1 font-bold">{suggestedFocusTask.priority}</span>
                 </div>
@@ -536,6 +587,24 @@ export default function Dashboard({ tasks, onSelectTab, activeTab, view = 'summa
             <span className="block text-[10px] font-bold text-slate-700 uppercase tracking-[0.2em] font-mono">
               🚨 Overdue Action Items
             </span>
+
+            {overdueTasksList.length > 0 && userMail && !hasEmailToken && onEnableEmailAlerts && (
+              <div className="p-3 bg-red-100/60 border border-red-200 text-[#C2410C] flex flex-col gap-2 rounded-none">
+                <span className="text-[10px] font-bold font-mono tracking-wider flex items-center gap-1">
+                  📧 OVERDUE MAIL NOTIFICATIONS OFF
+                </span>
+                <p className="text-[10.5px] font-serif leading-relaxed">
+                  Authenticate your Google Mail account to dispatch automated email warnings for your overdue workspace agendas.
+                </p>
+                <button
+                  type="button"
+                  onClick={onEnableEmailAlerts}
+                  className="w-full py-1 text-center bg-[#C2410C] text-white font-sans font-bold text-[9px] uppercase tracking-wider hover:bg-red-800 transition-colors cursor-pointer"
+                >
+                  Activate Email Alerts
+                </button>
+              </div>
+            )}
             
             <div className="space-y-2 max-h-[190px] overflow-y-auto pr-1">
               {overdueTasksList.length > 0 ? (
@@ -543,7 +612,7 @@ export default function Dashboard({ tasks, onSelectTab, activeTab, view = 'summa
                   <div key={t.id} className="bg-red-50/50 p-3 border border-[#C2410C]/20 flex flex-col justify-between">
                     <h5 className="font-serif text-xs font-bold text-[#1A1A1A] truncate">{t.title}</h5>
                     <div className="flex justify-between items-center text-[8px] font-mono text-slate-600 mt-1">
-                      <span>Folder: {t.category}</span>
+                      <span>Folder: {getCategoryInfo(t.category).name}</span>
                       <span className="text-[#C2410C] font-bold uppercase">OUT OF TIME</span>
                     </div>
                   </div>
@@ -581,7 +650,7 @@ export default function Dashboard({ tasks, onSelectTab, activeTab, view = 'summa
                     <div key={t.id} className="bg-white p-3 border border-[#1A1A1A]/10 flex flex-col justify-between">
                       <h5 className="font-serif text-xs font-bold text-[#1A1A1A] truncate">{t.title}</h5>
                       <div className="flex justify-between items-center text-[8px] font-mono text-slate-500 mt-1">
-                        <span>Folder: {t.category}</span>
+                        <span>Folder: {getCategoryInfo(t.category).name}</span>
                         <span className="font-bold text-orange-850">
                           {daysLeft === 0 ? "Today" : daysLeft === 1 ? "Tomorrow" : `In ${daysLeft} Days`}
                         </span>

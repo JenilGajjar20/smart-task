@@ -5,13 +5,44 @@ import { FirestoreErrorInfo, OperationType } from './types';
 import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId); /* CRITICAL: The app will break without this line */
+// Retrieve possible firestoreDatabaseId from config safely
+const dbId = (firebaseConfig as any).firestoreDatabaseId;
+export const db = dbId ? getFirestore(app, dbId) : getFirestore(app); /* CRITICAL: The app will break without this line */
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.addScope('https://www.googleapis.com/auth/gmail.send');
+
+let cachedAccessToken: string | null = null;
+try {
+  cachedAccessToken = sessionStorage.getItem('smarttask_access_token');
+} catch (e) {
+  console.warn('sessionStorage is not accessible:', e);
+}
+
+export function getAccessToken(): string | null {
+  return cachedAccessToken;
+}
+
+export function setAccessToken(token: string | null): void {
+  cachedAccessToken = token;
+  try {
+    if (token) {
+      sessionStorage.setItem('smarttask_access_token', token);
+    } else {
+      sessionStorage.removeItem('smarttask_access_token');
+    }
+  } catch (e) {
+    // Ignore
+  }
+}
 
 export async function signInWithGoogle() {
   try {
     const result = await signInWithPopup(auth, googleProvider);
+    const credential = GoogleAuthProvider.credentialFromResult(result);
+    if (credential?.accessToken) {
+      setAccessToken(credential.accessToken);
+    }
     return result.user;
   } catch (error) {
     console.error('Auth error during Google sign-in:', error);
@@ -22,6 +53,7 @@ export async function signInWithGoogle() {
 export async function logoutUser() {
   try {
     await signOut(auth);
+    setAccessToken(null);
   } catch (error) {
     console.error('Auth error during logout:', error);
     throw error;

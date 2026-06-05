@@ -9,8 +9,9 @@ import {
 } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { Task, Priority, Category } from '../types';
+import { Task, Priority, Category, CustomCategory } from '../types';
 import { getFileFromLocal } from '../utils/fileStorage';
+import { DEFAULT_CATEGORIES, CATEGORY_ICON_MAP } from '../utils/categories';
 
 function AttachmentLink({ att }: { att: any }) {
   const [resolvedUrl, setResolvedUrl] = useState(att.url);
@@ -85,6 +86,7 @@ interface TaskListProps {
   onCloseFilters?: () => void;
   viewKey?: string;
   setViewKey?: (key: string) => void;
+  customCategories?: CustomCategory[];
 }
 
 export default function TaskList({ 
@@ -98,7 +100,8 @@ export default function TaskList({
   isFiltersOpen = false,
   onCloseFilters,
   viewKey: propsViewKey,
-  setViewKey: propsSetViewKey
+  setViewKey: propsSetViewKey,
+  customCategories = []
 }: TaskListProps) {
   const [internalSearch, setInternalSearch] = useState('');
   const search = searchQuery !== undefined ? searchQuery : internalSearch;
@@ -238,17 +241,27 @@ export default function TaskList({
     }
   };
 
+  // Category Info Resolver
+  const getCategoryInfo = (categoryName: string) => {
+    const customMatch = (customCategories || []).find(c => c.id === categoryName || c.name === categoryName);
+    if (customMatch) return customMatch;
+
+    const defaultMatch = DEFAULT_CATEGORIES.find(c => c.id === categoryName || c.name === categoryName);
+    if (defaultMatch) return defaultMatch;
+
+    return {
+      id: 'Other',
+      name: categoryName || 'Other',
+      icon: 'Folder',
+      color: '#4B5563'
+    };
+  };
+
   // Category Icon Resolver
   const getCategoryIcon = (category: Category) => {
-    switch (category) {
-      case 'Work': return <Briefcase className="h-3 w-3 inline mr-1" />;
-      case 'Personal': return <User className="h-3 w-3 inline mr-1" />;
-      case 'Education': return <GraduationCap className="h-3 w-3 inline mr-1" />;
-      case 'Health': return <HeartPulse className="h-3 w-3 inline mr-1" />;
-      case 'Shopping': return <ShoppingBag className="h-3 w-3 inline mr-1" />;
-      case 'Finance': return <Coins className="h-3 w-3 inline mr-1" />;
-      default: return <Folder className="h-3 w-3 inline mr-1" />;
-    }
+    const info = getCategoryInfo(category);
+    const IconComp = CATEGORY_ICON_MAP[info.icon] || Folder;
+    return <IconComp className="h-3 w-3 inline mr-1" />;
   };
 
   const getPriorityStyle = (priority: Priority) => {
@@ -415,7 +428,15 @@ export default function TaskList({
     return grouped;
   }, [processedTasks]);
 
-  const categories: Category[] = ['Work', 'Personal', 'Education', 'Health', 'Shopping', 'Finance', 'Other'];
+  const categories = useMemo(() => {
+    const list = ['Work', 'Personal', 'Education', 'Health', 'Shopping', 'Finance', 'Other'];
+    (customCategories || []).forEach(cat => {
+      if (!list.includes(cat.id)) {
+        list.push(cat.id);
+      }
+    });
+    return list;
+  }, [customCategories]);
 
   const renderTaskItem = (task: Task) => {
     const isOverdue = !task.completed && task.dueDate.toDate() < new Date();
@@ -487,14 +508,26 @@ export default function TaskList({
               </span>
 
               {/* Category Tag */}
-              <span className={`text-[9px] font-bold uppercase border px-2 py-0.5 tracking-wider flex items-center ${
-                task.completed 
-                  ? 'text-slate-400 bg-slate-100 border-slate-200'
-                  : 'border-slate-200 text-slate-600 bg-slate-50'
-              }`}>
-                {getCategoryIcon(task.category)}
-                <span className="ml-1">{task.category}</span>
-              </span>
+              {(() => {
+                const info = getCategoryInfo(task.category);
+                return (
+                  <span 
+                    className="text-[9px] font-bold uppercase border px-2 py-0.5 tracking-wider flex items-center transition-all"
+                    style={
+                      task.completed 
+                        ? { color: '#94a3b8', backgroundColor: '#f1f5f9', borderColor: '#e2e8f0' }
+                        : { 
+                            color: info.color, 
+                            backgroundColor: info.color + '0D', // ~5% opacity
+                            borderColor: info.color + '33'   // ~20% opacity
+                          }
+                    }
+                  >
+                    {getCategoryIcon(task.category)}
+                    <span className="ml-1">{info.name}</span>
+                  </span>
+                );
+              })()}
 
               {/* Task Status badge */}
               <span className={`text-[9px] font-bold uppercase border px-2 py-0.5 tracking-wider ${
@@ -746,9 +779,10 @@ export default function TaskList({
               className="bg-transparent border-none outline-none text-xs font-semibold text-slate-700 cursor-pointer w-full p-0"
             >
               <option value="all">Any Category</option>
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
+              {categories.map(cat => {
+                const info = getCategoryInfo(cat);
+                return <option key={cat} value={cat}>{info.name}</option>;
+              })}
             </select>
           </div>
 
@@ -941,9 +975,10 @@ export default function TaskList({
                       className="bg-transparent border-none outline-none text-xs font-semibold text-slate-700 cursor-pointer w-full p-0"
                     >
                       <option value="all">Any Category</option>
-                      {categories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
+                      {categories.map(cat => {
+                        const info = getCategoryInfo(cat);
+                        return <option key={cat} value={cat}>{info.name}</option>;
+                      })}
                     </select>
                   </div>
 
@@ -1398,15 +1433,20 @@ export default function TaskList({
                 if (catTasks.length === 0) return null;
                 return (
                   <div key={cat} className="border border-[#1A1A1A] bg-[#F4F3EF] p-5 shadow-none space-y-3">
-                    <div className="flex justify-between items-baseline border-b border-[#1A1A1A]/30 pb-2">
-                      <h4 className="font-serif italic text-xl text-[#1A1A1A] font-semibold flex items-center gap-1.5">
-                        {getCategoryIcon(cat)}
-                        <span>{cat} Directory</span>
-                      </h4>
-                      <span className="text-[9px] uppercase font-mono tracking-wider font-bold opacity-60">
-                        {catTasks.length} Registry Entries
-                      </span>
-                    </div>
+                    {(() => {
+                      const info = getCategoryInfo(cat);
+                      return (
+                        <div className="flex justify-between items-baseline border-b border-[#1A1A1A]/30 pb-2" style={{ color: info.color }}>
+                          <h4 className="font-serif italic text-xl font-semibold flex items-center gap-1.5">
+                            {getCategoryIcon(cat)}
+                            <span>{info.name} Directory</span>
+                          </h4>
+                          <span className="text-[9px] uppercase font-mono tracking-wider font-bold opacity-60">
+                            {catTasks.length} Registry Entries
+                          </span>
+                        </div>
+                      );
+                    })()}
                     <div className="space-y-px bg-[#1A1A1A]">
                       {catTasks.map((task) => renderTaskItem(task))}
                     </div>
@@ -1600,10 +1640,18 @@ export default function TaskList({
                         </div>
                         <div className="p-2.5 bg-[#F4F3EF] border border-[#1A1A1A]/10 text-left">
                           <span className="block text-[8px] font-bold text-slate-500 uppercase tracking-widest font-mono">Folder</span>
-                          <span className="text-xs font-bold uppercase text-[#1A1A1A] font-sans flex items-center gap-0.5 block truncate">
-                            {getCategoryIcon(selectedTaskForDetail.category)}
-                            {selectedTaskForDetail.category}
-                          </span>
+                          {(() => {
+                            const info = getCategoryInfo(selectedTaskForDetail.category);
+                            return (
+                              <span 
+                                className="text-xs font-bold uppercase font-sans flex items-center gap-0.5 block truncate"
+                                style={{ color: info.color }}
+                              >
+                                {getCategoryIcon(selectedTaskForDetail.category)}
+                                {info.name}
+                              </span>
+                            );
+                          })()}
                         </div>
                         <div className="p-2.5 bg-[#F4F3EF] border border-[#1A1A1A]/10 text-left">
                           <span className="block text-[8px] font-bold text-slate-500 uppercase tracking-widest font-mono">Status</span>

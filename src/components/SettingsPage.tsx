@@ -1,20 +1,138 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings, ArrowLeft, RefreshCw, Volume2, ShieldCheck, Database, Trash2, Eye, Sliders, Layout } from 'lucide-react';
+import { Settings, ArrowLeft, RefreshCw, Volume2, ShieldCheck, Database, Trash2, Eye, Sliders, Layout, Folder } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Task } from '../types';
+import { Task, CustomCategory } from '../types';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { DEFAULT_CATEGORIES, CATEGORY_ICON_MAP } from '../utils/categories';
 
 interface SettingsPageProps {
   onBack: () => void;
   triggerToast: (message: string, type?: 'success' | 'error') => void;
   tasks: Task[];
   user: any;
+  customCategories: CustomCategory[];
+  onSaveCustomCategories: (newCategories: CustomCategory[]) => void;
+  onUpdateTaskCategory: (oldCat: string, newCat: string) => Promise<void> | void;
   onRequireAuth: () => void;
 }
 
-export default function SettingsPage({ onBack, triggerToast, tasks, user, onRequireAuth }: SettingsPageProps) {
+export default function SettingsPage({ 
+  onBack, 
+  triggerToast, 
+  tasks, 
+  user, 
+  customCategories,
+  onSaveCustomCategories,
+  onUpdateTaskCategory,
+  onRequireAuth 
+}: SettingsPageProps) {
   const baseKey = user ? `smarttask_user_${user.uid}` : 'smarttask';
+
+  // Custom category manager local states
+  const [editingCategory, setEditingCategory] = useState<CustomCategory | null>(null);
+  const [catName, setCatName] = useState('');
+  const [catColor, setCatColor] = useState('#1B4D3E');
+  const [catIcon, setCatIcon] = useState('Folder');
+
+  const [migrationModal, setMigrationModal] = useState<{
+    oldCatId: string;
+    affectedCount: number;
+    show: boolean;
+  } | null>(null);
+  const [migrationTarget, setMigrationTarget] = useState('Other');
+
+  const PRESET_COLORS = [
+    '#1B4D3E', // Emerald
+    '#1E3A8A', // Blue
+    '#6D28D9', // Purple
+    '#B91C1C', // Red
+    '#BE185D', // Pink
+    '#B45309', // Amber
+    '#4B5563', // Gray
+    '#0F766E', // Teal
+    '#4338CA', // Indigo
+    '#701A75', // Fuchsia
+    '#111827', // Charcoal
+    '#065F46', // Dark green
+  ];
+
+  const handleStartEditCategory = (cat: CustomCategory) => {
+    setEditingCategory(cat);
+    setCatName(cat.name);
+    setCatColor(cat.color);
+    setCatIcon(cat.icon);
+  };
+
+  const handleCancelEditCategory = () => {
+    setEditingCategory(null);
+    setCatName('');
+    setCatColor('#1B4D3E');
+    setCatIcon('Folder');
+  };
+
+  const handleSaveCategoryClick = () => {
+    if (!catName.trim()) {
+      triggerToast('Division name is required', 'error');
+      return;
+    }
+
+    if (editingCategory) {
+      const updated = customCategories.map(c => 
+        c.id === editingCategory.id ? { ...c, name: catName.trim(), color: catColor, icon: catIcon } : c
+      );
+      onSaveCustomCategories(updated);
+      triggerToast(`Division "${catName.trim()}" updated successfully`, 'success');
+      handleCancelEditCategory();
+    } else {
+      const newId = 'custom_' + Date.now();
+      const newCat: CustomCategory = {
+        id: newId,
+        name: catName.trim(),
+        color: catColor,
+        icon: catIcon
+      };
+      // Check duplicate
+      const exists = DEFAULT_CATEGORIES.some(c => c.name.toLowerCase() === catName.trim().toLowerCase()) ||
+                     customCategories.some(c => c.name.toLowerCase() === catName.trim().toLowerCase());
+      if (exists) {
+        triggerToast('A division with this name already exists', 'error');
+        return;
+      }
+      onSaveCustomCategories([...customCategories, newCat]);
+      triggerToast(`Division "${catName.trim()}" created successfully`, 'success');
+      handleCancelEditCategory();
+    }
+  };
+
+  const handleDeleteCategoryAttempt = (catId: string) => {
+    const affectedCount = tasks.filter(t => t.category === catId).length;
+    if (affectedCount > 0) {
+      setMigrationTarget('Other');
+      setMigrationModal({
+        oldCatId: catId,
+        affectedCount,
+        show: true
+      });
+    } else {
+      const updated = customCategories.filter(c => c.id !== catId);
+      onSaveCustomCategories(updated);
+      triggerToast('Division deleted successfully', 'success');
+    }
+  };
+
+  const handleConfirmDeleteCategoryAndMigrate = async () => {
+    if (!migrationModal) return;
+    const { oldCatId } = migrationModal;
+    
+    await onUpdateTaskCategory(oldCatId, migrationTarget);
+    
+    const updated = customCategories.filter(c => c.id !== oldCatId);
+    onSaveCustomCategories(updated);
+    
+    setMigrationModal(null);
+    triggerToast('Division dismantled and roles reallocated successfully', 'success');
+  };
 
   // Read existing preferences from localStorage or set defaults
   const [theme, setTheme] = useState<string>(() => {
@@ -602,6 +720,204 @@ export default function SettingsPage({ onBack, triggerToast, tasks, user, onRequ
                 </button>
               </div>
             </div>
+
+            {/* Custom Category Folders */}
+            <div className="border border-[#1A1A1A]/20 bg-white p-4 space-y-4 rounded-none" id="custom-categories-settings-container">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#C2410C] font-mono border-b border-[#1A1A1A]/10 pb-2 flex justify-between items-center">
+                <span>Custom Folders & Categories</span>
+                <span className="text-[9px] text-slate-500 font-sans tracking-normal font-normal">Create and manage customized workflow divisions</span>
+              </h4>
+              
+              {/* Category list */}
+              <div className="space-y-2">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Active Divisions</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[220px] overflow-y-auto pr-1">
+                  {/* Default Categories */}
+                  {DEFAULT_CATEGORIES.map(cat => {
+                    const IconComponent = CATEGORY_ICON_MAP[cat.icon] || Folder;
+                    return (
+                      <div key={cat.id} className="p-2 border border-slate-200/60 bg-slate-50/50 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1 text-white" style={{ backgroundColor: cat.color }}>
+                            <IconComponent className="h-3 w-3" />
+                          </div>
+                          <span className="text-xs font-serif text-[#1A1A1A] font-bold">{cat.name}</span>
+                        </div>
+                        <span className="text-[8px] font-mono uppercase bg-slate-200 text-slate-600 px-1 py-0.5">Default</span>
+                      </div>
+                    );
+                  })}
+                  {/* Custom Categories */}
+                  {customCategories.map(cat => {
+                    const IconComponent = CATEGORY_ICON_MAP[cat.icon] || Folder;
+                    return (
+                      <div key={cat.id} className="p-2 border border-[#1A1A1A]/15 bg-white flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1 text-white" style={{ backgroundColor: cat.color }}>
+                            <IconComponent className="h-3 w-3" />
+                          </div>
+                          <span className="text-xs font-serif text-[#1A1A1A] font-bold">{cat.name}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditCategory(cat)}
+                            className="p-1 border border-slate-300 hover:border-[#1A1A1A] text-slate-600 hover:text-[#1A1A1A] transition-all cursor-pointer"
+                            title="Edit Category Name & Icon"
+                          >
+                            <Sliders className="h-3 w-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCategoryAttempt(cat.id)}
+                            className="p-1 border border-rose-200 bg-rose-50/50 text-rose-700 hover:bg-rose-100 transition-all cursor-pointer animate-pulse"
+                            title="Delete Category"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Add/Edit Form */}
+              <div className="border-t border-[#1A1A1A]/10 pt-3 space-y-3">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  {editingCategory ? 'Update Division Attributes' : 'Propose New Division'}
+                </span>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[9px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Division Name</label>
+                    <input
+                      type="text"
+                      value={catName}
+                      onChange={(e) => setCatName(e.target.value)}
+                      placeholder="e.g. Research, Sprinklers..."
+                      className="w-full px-2.5 py-1 text-xs border border-[#1A1A1A] rounded-none bg-white text-[#1A1A1A] font-serif outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Division Identity Color</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={catColor}
+                        onChange={(e) => setCatColor(e.target.value)}
+                        className="w-8 h-7 p-0 border border-[#1A1A1A] rounded-none cursor-pointer bg-transparent"
+                      />
+                      <div className="flex-1 grid grid-cols-6 gap-0.5 max-w-[120px]">
+                        {PRESET_COLORS.slice(0, 6).map(color => (
+                          <button
+                            key={color}
+                            type="button"
+                            onClick={() => setCatColor(color)}
+                            className="w-4 h-4 border border-slate-300"
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Icon Grid Choice */}
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-bold uppercase tracking-wider text-slate-500 block">Select Division Emblem</label>
+                  <div className="grid grid-cols-10 gap-1 p-2 border border-[#1A1A1A]/10 bg-slate-50/50 max-h-[100px] overflow-y-auto">
+                    {Object.keys(CATEGORY_ICON_MAP).map(iconName => {
+                      const IconComp = CATEGORY_ICON_MAP[iconName];
+                      const isSelected = catIcon === iconName;
+                      return (
+                        <button
+                          key={iconName}
+                          type="button"
+                          onClick={() => setCatIcon(iconName)}
+                          className={`p-1.5 border transition-all ${
+                            isSelected ? 'bg-[#1A1A1A] text-white border-[#1A1A1A]' : 'bg-white text-slate-700 hover:bg-slate-100 border-slate-200'
+                          }`}
+                          title={iconName}
+                        >
+                          <IconComp className="h-4 w-4 mx-auto" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex gap-2 justify-end pt-1">
+                  {editingCategory && (
+                    <button
+                      type="button"
+                      onClick={handleCancelEditCategory}
+                      className="px-3 py-1.5 border border-slate-300 hover:border-[#1A1A1A] text-[#1A1A1A] font-bold text-[9px] uppercase tracking-wider transition-all cursor-pointer"
+                    >
+                      Cancel Edit
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleSaveCategoryClick}
+                    className="px-4 py-1.5 bg-[#1A1A1A] text-white hover:bg-white hover:text-[#1A1A1A] border border-[#1A1A1A] font-bold text-[9px] uppercase tracking-wider transition-all cursor-pointer"
+                  >
+                    {editingCategory ? 'Update Division' : 'Submit Division'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Category Task Migration Assessment Dialog */}
+            {migrationModal && migrationModal.show && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 bg-[#1A1A1A]/40 backdrop-blur-xs" />
+                <div className="bg-[#F9F8F6] text-[#1A1A1A] border-2 border-[#1A1A1A] w-full max-w-md p-6 relative z-51 shadow-xl space-y-4">
+                  <div>
+                    <p className="text-[#C2410C] text-[9px] font-bold uppercase tracking-[0.2em] font-mono mb-1">// DIVISION DISMANTLEMENT WARNING</p>
+                    <h3 className="font-serif italic text-2xl font-medium tracking-tight">Reallocate Workloads</h3>
+                    <p className="text-slate-600 font-serif text-xs mt-2 leading-relaxed">
+                      You are deleting division <strong>"{migrationModal.oldCatId}"</strong>. There are <strong>{migrationModal.affectedCount}</strong> active workspace items currently assigned here.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Select Target Workspace Division</label>
+                    <select
+                      value={migrationTarget}
+                      onChange={(e) => setMigrationTarget(e.target.value)}
+                      className="w-full px-3 py-1.5 bg-white border border-[#1A1A1A] rounded-none outline-none text-[#1A1A1A] text-xs font-serif transition-colors cursor-pointer"
+                    >
+                      {DEFAULT_CATEGORIES.map(c => (
+                        <option key={c.id} value={c.id}>{c.name} (Default)</option>
+                      ))}
+                      {customCategories
+                        .filter(c => c.id !== migrationModal.oldCatId)
+                        .map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div className="flex gap-2 justify-end pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setMigrationModal(null)}
+                      className="px-4 py-2 border border-[#1A1A1A] hover:bg-slate-100 font-bold text-[9px] uppercase tracking-wider transition-all cursor-pointer"
+                    >
+                      Cancel Delete
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleConfirmDeleteCategoryAndMigrate}
+                      className="px-4 py-2 bg-rose-700 text-white hover:bg-rose-800 font-bold text-[9px] uppercase tracking-wider transition-all cursor-pointer"
+                    >
+                      Reallocate & Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Account Protection Telemetry */}
             <div className="py-2 flex items-center gap-4 bg-white border border-[#1A1A1A]/20 p-4">

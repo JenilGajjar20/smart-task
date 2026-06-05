@@ -62,6 +62,7 @@ export interface Task {
   resourceLink?: string;
   dependency?: string;
   estimatedEffort?: string;
+  overdueEmailSent?: boolean;
 }
 
 export enum OperationType {

@@ -24,8 +24,11 @@
         },
         "category": {
           "type": "string",
-          "enum": ["Work", "Personal", "Education", "Health", "Shopping", "Finance", "Other"],
-          "description": "The category context of the task."
+          "description": "The category context of the task, can be a default or custom category."
+        },
+        "overdueEmailSent": {
+          "type": "boolean",
+          "description": "True if an email has been sent to the user notifying them that this task is overdue."
         },
         "completed": {
           "type": "boolean",

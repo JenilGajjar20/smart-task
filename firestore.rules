@@ -30,17 +30,18 @@ service cloud.firestore {
 
     // --- Task entity validation ---
     function isValidTask(task) {
-      return task.keys().hasAll(['userId', 'title', 'priority', 'category', 'completed', 'dueDate', 'createdAt', 'updatedAt']) &&
-             task.keys().hasOnly(['userId', 'title', 'priority', 'category', 'completed', 'dueDate', 'createdAt', 'updatedAt', 'description', 'project', 'reminderTime', 'recurrence', 'subtasks', 'estimatedTime', 'notes', 'amount', 'paymentStatus', 'recurringBill', 'habitType', 'streak', 'shoppingQuantity', 'shoppingStore', 'shoppingCost', 'subject', 'studyDuration', 'resourceLink', 'dependency', 'estimatedEffort', 'status', 'attachments']) &&
-             task.keys().size() >= 8 && task.keys().size() <= 64 &&
+      return task.keys().hasAll(['userId', 'title', 'priority', 'category', 'completed', 'dueDate']) &&
+             task.keys().hasOnly(['userId', 'title', 'priority', 'category', 'completed', 'dueDate', 'createdAt', 'updatedAt', 'description', 'project', 'reminderTime', 'recurrence', 'subtasks', 'estimatedTime', 'notes', 'amount', 'paymentStatus', 'recurringBill', 'habitType', 'streak', 'shoppingQuantity', 'shoppingStore', 'shoppingCost', 'subject', 'studyDuration', 'resourceLink', 'dependency', 'estimatedEffort', 'status', 'attachments', 'overdueEmailSent']) &&
+             task.keys().size() >= 6 && task.keys().size() <= 64 &&
              task.userId == request.auth.uid &&
              task.title is string && task.title.size() >= 1 && task.title.size() <= 100 &&
              task.priority is string && (task.priority == 'low' || task.priority == 'medium' || task.priority == 'high') &&
-             task.category is string && (task.category == 'Work' || task.category == 'Personal' || task.category == 'Education' || task.category == 'Health' || task.category == 'Shopping' || task.category == 'Finance' || task.category == 'Other') &&
+             task.category is string && (task.category == 'Work' || task.category == 'Personal' || task.category == 'Education' || task.category == 'Health' || task.category == 'Shopping' || task.category == 'Finance' || task.category == 'Other' || (task.category.size() <= 50 && task.category.matches('^custom_[0-9]+$'))) &&
              task.completed is bool &&
              task.dueDate is timestamp &&
-             task.createdAt is timestamp &&
-             task.updatedAt is timestamp &&
+             (!task.keys().hasAll(['createdAt']) || task.createdAt is timestamp) &&
+             (!task.keys().hasAll(['updatedAt']) || task.updatedAt is timestamp) &&
+             (!task.keys().hasAll(['overdueEmailSent']) || task.overdueEmailSent is bool) &&
              (!task.keys().hasAll(['description']) || (task.description is string && task.description.size() <= 1000)) &&
              (!task.keys().hasAll(['project']) || (task.project == null || (task.project is string && task.project.size() <= 100))) &&
              (!task.keys().hasAll(['reminderTime']) || (task.reminderTime == null || task.reminderTime is timestamp)) &&
@@ -72,7 +73,7 @@ service cloud.firestore {
                     existing().userId == request.auth.uid && 
                     incoming().userId == request.auth.uid && 
                     isValidTask(incoming()) && 
-                    incoming().createdAt == existing().createdAt && 
+                    (!incoming().keys().hasAll(['createdAt']) || !existing().keys().hasAll(['createdAt']) || incoming().createdAt == existing().createdAt) && 
                     incoming().updatedAt == request.time;
 
       allow delete: if isVerifiedUser() && 
