@@ -1368,7 +1368,7 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
                     <span>Saving...</span>
                   </>
                 ) : (
-                  <span>{taskToEdit ? 'Save Changes' : 'Commit Task'}</span>
+                  <span>{taskToEdit ? 'Save Changes' : 'Save Task'}</span>
                 )}
               </button>
             </div>

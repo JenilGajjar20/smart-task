@@ -74,7 +74,7 @@ export default function SettingsPage({
 
   const handleSaveCategoryClick = () => {
     if (!catName.trim()) {
-      triggerToast('Division name is required', 'error');
+      triggerToast('Category name is required', 'error');
       return;
     }
 
@@ -83,7 +83,7 @@ export default function SettingsPage({
         c.id === editingCategory.id ? { ...c, name: catName.trim(), color: catColor, icon: catIcon } : c
       );
       onSaveCustomCategories(updated);
-      triggerToast(`Division "${catName.trim()}" updated successfully`, 'success');
+      triggerToast(`Category "${catName.trim()}" updated successfully`, 'success');
       handleCancelEditCategory();
     } else {
       const newId = 'custom_' + Date.now();
@@ -97,11 +97,11 @@ export default function SettingsPage({
       const exists = DEFAULT_CATEGORIES.some(c => c.name.toLowerCase() === catName.trim().toLowerCase()) ||
                      customCategories.some(c => c.name.toLowerCase() === catName.trim().toLowerCase());
       if (exists) {
-        triggerToast('A division with this name already exists', 'error');
+        triggerToast('A category with this name already exists', 'error');
         return;
       }
       onSaveCustomCategories([...customCategories, newCat]);
-      triggerToast(`Division "${catName.trim()}" created successfully`, 'success');
+      triggerToast(`Category "${catName.trim()}" created successfully`, 'success');
       handleCancelEditCategory();
     }
   };
@@ -118,7 +118,7 @@ export default function SettingsPage({
     } else {
       const updated = customCategories.filter(c => c.id !== catId);
       onSaveCustomCategories(updated);
-      triggerToast('Division deleted successfully', 'success');
+      triggerToast('Category deleted successfully', 'success');
     }
   };
 
@@ -132,7 +132,7 @@ export default function SettingsPage({
     onSaveCustomCategories(updated);
     
     setMigrationModal(null);
-    triggerToast('Division dismantled and roles reallocated successfully', 'success');
+    triggerToast('Category deleted and tasks reallocated successfully', 'success');
   };
 
   // Read existing preferences from localStorage or set defaults
@@ -771,10 +771,10 @@ export default function SettingsPage({
                   {/* Header */}
                   <div className="flex items-center justify-between pb-4 border-b border-[#1A1A1A]">
                     <div className="flex items-center gap-2">
-                      <Folder className="h-5 w-5 text-[#C2410C]" />
+                       <Folder className="h-5 w-5 text-[#C2410C]" />
                       <div>
-                        <h3 className="font-serif italic text-2xl font-medium tracking-tight">Manage Workflow Divisions</h3>
-                        <p className="text-[10px] text-slate-500 font-sans tracking-wide uppercase">Configure divisions, workspace categories, and active filters</p>
+                        <h3 className="font-serif italic text-2xl font-medium tracking-tight">Manage Categories</h3>
+                        <p className="text-[10px] text-slate-500 font-sans tracking-wide uppercase">Configure category labels and workspace classification filters</p>
                       </div>
                     </div>
                     <button
@@ -796,9 +796,9 @@ export default function SettingsPage({
                     {/* Left Column: Active Divisions list */}
                     <div className="lg:col-span-7 space-y-4">
                       <div>
-                        <h4 className="text-[11px] font-sans font-bold uppercase tracking-wider text-[#1A1A1A] mb-1">Active Divisions & Folders</h4>
+                        <h4 className="text-[11px] font-sans font-bold uppercase tracking-wider text-[#1A1A1A] mb-1">Active Categories & Folders</h4>
                         <p className="text-[10px] text-slate-500 leading-normal font-sans">
-                          A central index of system of record channels. Default division labels are locked and protected from deletion.
+                          A central index of system of record channels. Default category labels are locked and protected from deletion.
                         </p>
                       </div>
 
@@ -836,7 +836,7 @@ export default function SettingsPage({
                                     type="button"
                                     onClick={() => handleStartEditCategory(cat)}
                                     className="p-1.5 border border-slate-300 hover:border-[#1A1A1A] text-slate-600 hover:text-[#1A1A1A] transition-all cursor-pointer bg-white"
-                                    title="Edit Division Details"
+                                    title="Edit Category Details"
                                   >
                                     <Sliders className="h-3.5 w-3.5" />
                                   </button>
@@ -844,7 +844,7 @@ export default function SettingsPage({
                                     type="button"
                                     onClick={() => handleDeleteCategoryAttempt(cat.id)}
                                     className="p-1.5 border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition-all cursor-pointer"
-                                    title="Dismantle Division"
+                                    title="Delete Category"
                                   >
                                     <Trash2 className="h-3.5 w-3.5" />
                                   </button>
@@ -855,8 +855,8 @@ export default function SettingsPage({
                         </div>
                         {customCategories.length === 0 && (
                           <div className="text-center py-6 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center bg-white">
-                            <span className="text-[10px] uppercase font-mono tracking-widest text-slate-400">No Custom Divisions Proposed Yet</span>
-                            <span className="text-[9px] font-sans text-slate-400 mt-1">Use the right panel to configure customized departments.</span>
+                            <span className="text-[10px] uppercase font-mono tracking-widest text-[#1A1A1A]/40">No Custom Categories Created Yet</span>
+                            <span className="text-[9px] font-sans text-slate-400 mt-1">Use the right panel to configure customized categories.</span>
                           </div>
                         )}
                       </div>
@@ -866,11 +866,11 @@ export default function SettingsPage({
                     <div className="lg:col-span-5 bg-white border border-[#1A1A1A] p-4 shadow-[3px_3px_0px_#1A1A1A] space-y-4">
                       <div>
                         <h4 className="text-[11px] font-sans font-bold uppercase tracking-wider text-[#C2410C]">
-                          {editingCategory ? 'Modify Selected Division' : 'Propose New Division'}
+                          {editingCategory ? 'Modify Selected Category' : 'Create New Category'}
                         </h4>
                         <p className="text-[10px] text-slate-500 leading-normal font-sans">
                           {editingCategory 
-                            ? 'Adjust the labels, color codes, and visual icons for this customized workflow channel.'
+                            ? 'Adjust the labels, color codes, and visual icons for this customized category.'
                             : 'Create a new compartmentalized category for tailored assignment groupings and filters.'
                           }
                         </p>
@@ -878,7 +878,7 @@ export default function SettingsPage({
 
                       <div className="space-y-4">
                         <div>
-                          <label className="text-[9px] font-bold uppercase tracking-wider text-[#1A1A1A] block mb-1">Division Title Name *</label>
+                          <label className="text-[9px] font-bold uppercase tracking-wider text-[#1A1A1A] block mb-1">Category Name *</label>
                           <input
                             type="text"
                             value={catName}
@@ -889,7 +889,7 @@ export default function SettingsPage({
                         </div>
 
                         <div>
-                          <label className="text-[9px] font-bold uppercase tracking-wider text-[#1A1A1A] block mb-1">Division Accent Color</label>
+                          <label className="text-[9px] font-bold uppercase tracking-wider text-[#1A1A1A] block mb-1">Category Color</label>
                           <div className="flex items-center gap-2">
                             <input
                               type="color"
@@ -913,7 +913,9 @@ export default function SettingsPage({
 
                         {/* Icon Grid Choice */}
                         <div className="space-y-1.5">
-                          <label className="text-[9px] font-bold uppercase tracking-wider text-[#1A1A1A] block">Division Emblem Icon</label>
+                          <label className="text-[9px] font-bold uppercase tracking-wider text-[#1A1A1A] block flex items-center justify-between">
+                            <span>Category Icon</span>
+                          </label>
                           <div className="grid grid-cols-5 gap-1 p-2 border border-[#1A1A1A]/15 bg-slate-50 max-h-[140px] overflow-y-auto">
                             {Object.keys(CATEGORY_ICON_MAP).map(iconName => {
                               const IconComp = CATEGORY_ICON_MAP[iconName];
@@ -952,7 +954,7 @@ export default function SettingsPage({
                             onClick={handleSaveCategoryClick}
                             className="px-4 py-2 bg-[#1A1A1A] text-white hover:bg-white hover:text-[#1A1A1A] border-2 border-[#1A1A1A] font-bold text-[9px] uppercase tracking-wider transition-all cursor-pointer shadow-[2px_2px_0px_#C2410C] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px]"
                           >
-                            {editingCategory ? 'Update Division' : 'Submit Division'}
+                            {editingCategory ? 'Update Category' : 'Submit Category'}
                           </button>
                         </div>
                       </div>
@@ -969,15 +971,15 @@ export default function SettingsPage({
                 <div className="fixed inset-0 bg-[#1A1A1A]/40 backdrop-blur-xs" />
                 <div className="bg-[#F9F8F6] text-[#1A1A1A] border-2 border-[#1A1A1A] w-full max-w-md p-6 relative z-51 shadow-xl space-y-4">
                   <div>
-                    <p className="text-[#C2410C] text-[9px] font-bold uppercase tracking-[0.2em] font-mono mb-1">// DIVISION DISMANTLEMENT WARNING</p>
+                    <p className="text-[#C2410C] text-[9px] font-bold uppercase tracking-[0.2em] font-mono mb-1">// CATEGORY DELETION WARNING</p>
                     <h3 className="font-serif italic text-2xl font-medium tracking-tight">Reallocate Workloads</h3>
                     <p className="text-slate-600 font-serif text-xs mt-2 leading-relaxed">
-                      You are deleting division <strong>"{migrationModal.oldCatId}"</strong>. There are <strong>{migrationModal.affectedCount}</strong> active workspace items currently assigned here.
+                      You are deleting category <strong>"{migrationModal.oldCatId}"</strong>. There are <strong>{migrationModal.affectedCount}</strong> active workspace items currently assigned here.
                     </p>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Select Target Workspace Division</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Select Target Category</label>
                     <select
                       value={migrationTarget}
                       onChange={(e) => setMigrationTarget(e.target.value)}

@@ -852,6 +852,30 @@ export default function App() {
     }
   };
 
+  // Bulk empty all tasks currently in Trash Bin
+  const handleEmptyTrash = async () => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      triggerToast('Authentication Required.', 'error');
+      return;
+    }
+    const trashedTasks = tasks.filter(t => t.deleted);
+    if (trashedTasks.length === 0) {
+      triggerToast('Trash Bin is already empty.');
+      return;
+    }
+    try {
+      const path = 'tasks';
+      for (const t of trashedTasks) {
+        const docRef = doc(db, path, t.id);
+        await deleteDoc(docRef);
+      }
+      triggerToast('Trash Bin emptied successfully.');
+    } catch (error: any) {
+      handleFirestoreError(error, OperationType.DELETE, 'tasks');
+    }
+  };
+
   const handleEditInit = (task: Task) => {
     if (!user) {
       setIsAuthModalOpen(true);
@@ -1218,6 +1242,7 @@ export default function App() {
                   onDeleteTask={handleDeleteTask}
                   onPermanentDeleteTask={handlePermanentDeleteTask}
                   onRestoreTask={handleRestoreTask}
+                  onEmptyTrash={handleEmptyTrash}
                   searchQuery={searchQueryGlobal}
                   setSearchQuery={setSearchQueryGlobal}
                   isFiltersOpen={isGlobalFilterOpen}

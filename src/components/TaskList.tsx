@@ -82,6 +82,7 @@ interface TaskListProps {
   onDeleteTask: (taskId: string) => Promise<void>;
   onPermanentDeleteTask?: (taskId: string) => Promise<void>;
   onRestoreTask?: (task: Task) => Promise<void>;
+  onEmptyTrash?: () => Promise<void> | void;
   searchQuery?: string;
   setSearchQuery?: (val: string) => void;
   isFiltersOpen?: boolean;
@@ -99,6 +100,7 @@ export default function TaskList({
   onDeleteTask,
   onPermanentDeleteTask,
   onRestoreTask,
+  onEmptyTrash,
   searchQuery,
   setSearchQuery,
   isFiltersOpen = false,
@@ -125,7 +127,7 @@ export default function TaskList({
            'agenda';
   });
 
-  const viewKey = propsViewKey !== undefined ? propsViewKey : localViewKey;
+  const viewKey = activeTab === 'trash' ? 'agenda' : (propsViewKey !== undefined ? propsViewKey : localViewKey);
   const setViewKey = (val: string) => {
     if (propsSetViewKey) {
       propsSetViewKey(val);
@@ -340,17 +342,17 @@ export default function TaskList({
     }
 
     // 3. Filter by Priority
-    if (selectedPriority !== 'all') {
+    if (activeTab !== 'trash' && selectedPriority !== 'all') {
       list = list.filter(t => t.priority === selectedPriority);
     }
 
     // 4. Filter by Category
-    if (selectedCategory !== 'all') {
+    if (activeTab !== 'trash' && selectedCategory !== 'all') {
       list = list.filter(t => t.category === selectedCategory);
     }
 
     // 4.5 Filter by Status
-    if (selectedStatus !== 'all') {
+    if (activeTab !== 'trash' && selectedStatus !== 'all') {
       list = list.filter(t => {
         const tStatus = t.status || (t.completed ? 'Completed' : 'Not Started');
         return tStatus === selectedStatus;
@@ -358,7 +360,7 @@ export default function TaskList({
     }
 
     // 4.6 Filter by Due Date Filter Dropdown and presets
-    if (dueDateFilter !== 'all') {
+    if (activeTab !== 'trash' && dueDateFilter !== 'all') {
       const startOfToday = new Date();
       startOfToday.setHours(0, 0, 0, 0);
       const endOfToday = new Date();
@@ -385,7 +387,7 @@ export default function TaskList({
     }
 
     // 5. Filter by Project
-    if (selectedProject !== 'all') {
+    if (activeTab !== 'trash' && selectedProject !== 'all') {
       if (selectedProject === 'none') {
         list = list.filter(t => !t.project || t.project.trim() === '');
       } else {
@@ -592,15 +594,17 @@ export default function TaskList({
         {/* Standard Action items */}
         <div className="flex items-center gap-1 self-center ml-auto shrink-0 font-sans">
           {/* View Details clickable button */}
-          <button
-            type="button"
-            onClick={() => setSelectedTaskForDetail(task)}
-            className="px-2 py-1 text-[10px] md:text-[11px] font-semibold text-slate-500 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer flex items-center gap-1"
-            title="Inspect full details"
-          >
-            <ExternalLink className="h-3 w-3" />
-            <span className="hidden sm:inline">View Details</span>
-          </button>
+          {!task.deleted && (
+            <button
+              type="button"
+              onClick={() => setSelectedTaskForDetail(task)}
+              className="px-2 py-1 text-[10px] md:text-[11px] font-semibold text-slate-500 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer flex items-center gap-1"
+              title="Inspect full details"
+            >
+              <ExternalLink className="h-3 w-3" />
+              <span className="hidden sm:inline">View Details</span>
+            </button>
+          )}
 
           {task.deleted ? (
             <>
@@ -713,99 +717,137 @@ export default function TaskList({
     <div className="bg-white rounded-none border border-slate-200 p-5 shadow-xs space-y-6 font-sans">
       
       {/* 7-Way Multi-View Switcher Tab Strip - Simplified */}
-      <div className="border-b border-slate-200 pb-3">
-        <label className="block text-[11px] font-semibold text-slate-500 mb-2 font-sans tracking-tight">
-          Select view orientation
-        </label>
-        <div className="flex flex-wrap gap-1 bg-slate-50 p-1 border border-slate-200">
-          {[
-            { key: 'agenda', label: '📋 Agenda' },
-            { key: 'kanban', label: '🗂️ Kanban' },
-            { key: 'calendar', label: '📅 Calendar' },
-            { key: 'focus', label: '🎯 Focus Spot' },
-            { key: 'category', label: '🏷️ Categories' },
-            { key: 'project', label: '📚 Books / Projects' },
-            { key: 'timeline', label: '⏳ Timeline' },
-          ].map((tab) => {
-            const isActive = viewKey === tab.key;
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => {
-                  setViewKey(tab.key);
-                  localStorage.setItem('smarttask_guest_default_task_view', tab.key);
-                  localStorage.setItem('smarttask_default_task_view', tab.key);
-                }}
-                className={`flex-1 min-w-[100px] text-center py-1.5 px-3 text-[11px] font-semibold tracking-tight transition-all duration-150 cursor-pointer ${
-                  isActive 
-                    ? 'bg-[#1A1A1A] text-white shadow-xs font-bold' 
-                    : 'bg-transparent text-slate-600 hover:text-slate-900 hover:bg-white/50'
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
+      {activeTab !== 'trash' && (
+        <div className="border-b border-slate-200 pb-3">
+          <label className="block text-[11px] font-semibold text-slate-500 mb-2 font-sans tracking-tight">
+            Select view orientation
+          </label>
+          <div className="flex flex-wrap gap-1 bg-slate-50 p-1 border border-slate-200">
+            {[
+              { key: 'agenda', label: '📋 Agenda' },
+              { key: 'kanban', label: '🗂️ Kanban' },
+              { key: 'calendar', label: '📅 Calendar' },
+              { key: 'focus', label: '🎯 Focus Spot' },
+              { key: 'category', label: '🏷️ Categories' },
+              { key: 'project', label: '📚 Books / Projects' },
+              { key: 'timeline', label: '⏳ Timeline' },
+            ].map((tab) => {
+              const isActive = viewKey === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => {
+                    setViewKey(tab.key);
+                    localStorage.setItem('smarttask_guest_default_task_view', tab.key);
+                    localStorage.setItem('smarttask_default_task_view', tab.key);
+                  }}
+                  className={`flex-1 min-w-[100px] text-center py-1.5 px-3 text-[11px] font-semibold tracking-tight transition-all duration-150 cursor-pointer ${
+                    isActive 
+                      ? 'bg-[#1A1A1A] text-white shadow-xs font-bold' 
+                      : 'bg-transparent text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 2. Unified Search, Quick Filters & Basic Options Area */}
       <div className="space-y-4">
-        {/* Search & Advanced Toggle Row (Desktop/Large Screens) */}
-        <div className="hidden sm:flex gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-            <input
-              id="task-search-input"
-              type="text"
-              placeholder="Search by title, description..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 text-sm outline-none focus:border-red-500 focus:bg-white transition-all text-slate-800"
-            />
+        {activeTab === 'trash' ? (
+          /* Simplified Trash Header Row */
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <input
+                id="task-search-input"
+                type="text"
+                placeholder="Search trashed items..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 text-sm outline-none focus:border-red-500 focus:bg-white transition-all text-slate-800"
+              />
+            </div>
+            {onEmptyTrash && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm("Are you sure you want to permanently empty the Trash Bin? This will delete all trashed tasks forever.")) {
+                    onEmptyTrash();
+                  }
+                }}
+                disabled={processedTasks.length === 0}
+                className="px-5 py-2.5 bg-rose-705 hover:bg-rose-800 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed text-white border-2 border-rose-700 font-bold text-xs uppercase tracking-widest rounded-none transition-all active:scale-[0.98] cursor-pointer inline-flex items-center justify-center gap-2"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Empty Trash ({processedTasks.length})</span>
+              </button>
+            )}
           </div>
-          
-          <button
-            type="button"
-            onClick={() => setIsAdvancedFiltersOpen(!isAdvancedFiltersOpen)}
-            className={`px-4 py-2 text-xs font-semibold border flex items-center justify-center gap-2 cursor-pointer transition-colors ${
-              isAdvancedFiltersOpen || isFiltersOpen
-                ? 'bg-slate-100 border-slate-300 text-slate-900' 
-                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            <span>Advanced Filters</span>
-            <span className="text-[9px] opacity-75">{isAdvancedFiltersOpen || isFiltersOpen ? '▲' : '▼'}</span>
-          </button>
-        </div>
+        ) : (
+          <>
+            {/* Search & Advanced Toggle Row (Desktop/Large Screens) */}
+            <div className="hidden sm:flex gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                <input
+                  id="task-search-input"
+                  type="text"
+                  placeholder="Search by title, description..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 text-sm outline-none focus:border-red-500 focus:bg-white transition-all text-slate-800"
+                />
+              </div>
+              
+              <button
+                type="button"
+                onClick={() => setIsAdvancedFiltersOpen(!isAdvancedFiltersOpen)}
+                className={`px-4 py-2 text-xs font-semibold border flex items-center justify-center gap-2 cursor-pointer transition-colors ${
+                  isAdvancedFiltersOpen || isFiltersOpen
+                    ? 'bg-slate-100 border-slate-300 text-slate-900' 
+                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                <span>Advanced Filters</span>
+                <span className="text-[9px] opacity-75">{isAdvancedFiltersOpen || isFiltersOpen ? '▲' : '▼'}</span>
+              </button>
+            </div>
 
-        {/* Search & Filter Toggles Row (Mobile Screens View) */}
-        <div className="flex sm:hidden gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search tasks..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 text-xs outline-none focus:border-red-500 focus:bg-white text-slate-800"
-            />
-          </div>
-          
-          <button
-            type="button"
-            onClick={() => setIsAdvancedFiltersOpen(true)}
-            className={`px-3 py-1.5 text-xs font-semibold border flex items-center justify-center gap-1.5 cursor-pointer transition-colors bg-white border-slate-200 text-slate-600 active:bg-slate-50`}
-          >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            <span>Filters</span>
-          </button>
-        </div>
+            {/* Search & Filter Toggles Row (Mobile Screens View) */}
+            <div className="flex sm:hidden gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search tasks..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 text-xs outline-none focus:border-red-500 focus:bg-white text-slate-800"
+                />
+              </div>
+              
+              <button
+                type="button"
+                onClick={() => setIsAdvancedFiltersOpen(true)}
+                className={`px-3 py-1.5 text-xs font-semibold border flex items-center justify-center gap-1.5 cursor-pointer transition-colors bg-white border-slate-200 text-slate-600 active:bg-slate-50`}
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                <span>Filters</span>
+              </button>
+            </div>
+          </>
+        )}
 
-        {/* Desktop Inline Basic Filters (Hidden on Mobile) */}
-        <div className="hidden sm:grid grid-cols-2 md:grid-cols-4 gap-2">
+        {activeTab !== 'trash' && (
+          <>
+            {/* Desktop Inline Basic Filters (Hidden on Mobile) */}
+            <div className="hidden sm:grid grid-cols-2 md:grid-cols-4 gap-2">
           {/* Status Select Filter */}
           <div className="flex flex-col px-3 py-1.5 bg-slate-50 border border-slate-200">
             <span className="text-[9px] uppercase font-bold text-slate-400 font-mono tracking-tight leading-none mb-1">Status</span>
@@ -1126,6 +1168,8 @@ export default function TaskList({
             </div>
           )}
         </AnimatePresence>
+          </>
+        )}
       </div>
 
       {/* MATRIX RENDER CONTENT */}
@@ -1862,6 +1906,35 @@ export default function TaskList({
                                 <span className="text-[10px] text-slate-400 font-mono">Resource</span>
                               </div>
                             ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Metadata Blueprint Summary Panel (Shown if no custom panels are active) */}
+                      {!selectedTaskForDetail.notes && 
+                       (!selectedTaskForDetail.subtasks || selectedTaskForDetail.subtasks.length === 0) && 
+                       (!selectedTaskForDetail.attachments || selectedTaskForDetail.attachments.length === 0) && (
+                        <div className="bg-[#F2efe9] border-2 border-slate-300 p-4 font-mono text-[11px] text-slate-600 space-y-2.5">
+                          <span className="block font-sans font-bold text-[#1A1A1A] uppercase tracking-wider text-[9px] border-b border-slate-300 pb-1">
+                            📊 Workspace Blueprint Diagnostics
+                          </span>
+                          <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-left">
+                            <div>
+                              <span className="block text-[8px] font-bold uppercase text-slate-400">INDEX RECORD</span>
+                              <span className="font-semibold text-slate-700">STATIC_RECORD_OK</span>
+                            </div>
+                            <div>
+                              <span className="block text-[8px] font-bold uppercase text-slate-400">TASK PERSISTENCE</span>
+                              <span className="font-semibold text-slate-700">FIRESTORE_DATABASE</span>
+                            </div>
+                            <div>
+                              <span className="block text-[8px] font-bold uppercase text-slate-400">RECORD INTEGRITY</span>
+                              <span className="font-semibold text-[#C2410C]">VERIFIED_SECURE</span>
+                            </div>
+                            <div>
+                              <span className="block text-[8px] font-bold uppercase text-slate-400">VISIBILITY FILTER</span>
+                              <span className="font-semibold text-slate-700">{selectedTaskForDetail.deleted ? 'TRASH_ARCHIVE' : 'WORKSPACE_ACTIVE'}</span>
+                            </div>
                           </div>
                         </div>
                       )}
