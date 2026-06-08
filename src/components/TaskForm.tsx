@@ -437,7 +437,9 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
           initial={{ opacity: 0, scale: 0.98, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.98, y: 15 }}
-          className="relative z-10 inline-block w-full max-w-lg p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-[#F9F8F6] shadow-none rounded-none border-2 border-[#1A1A1A] sm:align-middle"
+          className={`relative z-10 inline-block w-full p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-[#F9F8F6] shadow-none rounded-none border-2 border-[#1A1A1A] sm:align-middle transition-[max-width] duration-300 ${
+            formMode === 'advanced' ? 'max-w-xl md:max-w-4xl lg:max-w-5xl' : 'max-w-lg'
+          }`}
         >
           <div className="flex items-center justify-between pb-4 mb-4 border-b border-[#1A1A1A]">
             <div className="flex items-center gap-2">
@@ -584,15 +586,15 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
                 </div>
               </div>
             ) : (
-              /* ADVANCED MODE - 6 Collapsible Accordion Sections in requested format */
-              <div className="space-y-3 border border-[#1A1A1A]/10 p-1.5 bg-[#F4F3EF]/30 font-sans">
+              /* ADVANCED MODE - 6 Collapsible Accordion Sections beautifully arranged inside a responsive grid layout to look airy, readable, and less compressed */
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 font-sans items-start p-1 bg-transparent">
                 
                 {/* 1. Project & Work Details Accordion */}
-                <div className="border border-[#1A1A1A]">
+                <div className="border border-[#1A1A1A] bg-white shadow-[2px_2px_0px_#1A1A1A] transition-all hover:translate-y-[-1px]">
                   <button
                     type="button"
                     onClick={() => toggleSection('workDetails')}
-                    className="w-full flex items-center justify-between p-3 bg-[#EBEAE6] hover:bg-[#EBEAE6]/80 text-[#1A1A1A] text-[10px] font-bold uppercase tracking-wider select-none cursor-pointer border-b border-[#1A1A1A]"
+                    className="w-full flex items-center justify-between p-4 bg-[#EBEAE6] hover:bg-[#EBEAE6]/80 text-[#1A1A1A] text-[11px] font-bold uppercase tracking-wider select-none cursor-pointer border-b border-[#1A1A1A] transition-colors"
                   >
                     <span className="flex items-center gap-1.5">📁 Project & Work Details</span>
                     <span className="font-mono text-xs">{expandedSections.workDetails ? '▼' : '►'}</span>
@@ -844,11 +846,11 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
                 </div>
 
                 {/* 2. SubTasks Accordion */}
-                <div className="border border-[#1A1A1A]">
+                <div className="border border-[#1A1A1A] bg-white shadow-[2px_2px_0px_#1A1A1A] transition-all hover:translate-y-[-1px]">
                   <button
                     type="button"
                     onClick={() => toggleSection('subtasks')}
-                    className="w-full flex items-center justify-between p-3 bg-[#EBEAE6] hover:bg-[#EBEAE6]/80 text-[#1A1A1A] text-[10px] font-bold uppercase tracking-wider select-none cursor-pointer border-b border-[#1A1A1A]"
+                    className="w-full flex items-center justify-between p-4 bg-[#EBEAE6] hover:bg-[#EBEAE6]/80 text-[#1A1A1A] text-[11px] font-bold uppercase tracking-wider select-none cursor-pointer border-b border-[#1A1A1A] transition-colors"
                   >
                     <span className="flex items-center gap-1.5">✅ SubTasks</span>
                     <span className="font-mono text-xs">{expandedSections.subtasks ? '▼' : '►'}</span>
@@ -996,11 +998,11 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
                 </div>
 
                 {/* 3. Attachments & Links Accordion */}
-                <div className="border border-[#1A1A1A]">
+                <div className="border border-[#1A1A1A] bg-white shadow-[2px_2px_0px_#1A1A1A] transition-all hover:translate-y-[-1px]">
                   <button
                     type="button"
                     onClick={() => toggleSection('attachments')}
-                    className="w-full flex items-center justify-between p-3 bg-[#EBEAE6] hover:bg-[#EBEAE6]/80 text-[#1A1A1A] text-[10px] font-bold uppercase tracking-wider select-none cursor-pointer border-b border-[#1A1A1A]"
+                    className="w-full flex items-center justify-between p-4 bg-[#EBEAE6] hover:bg-[#EBEAE6]/80 text-[#1A1A1A] text-[11px] font-bold uppercase tracking-wider select-none cursor-pointer border-b border-[#1A1A1A] transition-colors"
                   >
                     <span className="flex items-center gap-1.5">📎 Attachments & Links</span>
                     <span className="font-mono text-xs">{expandedSections.attachments ? '▼' : '►'}</span>
@@ -1115,11 +1117,11 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
                 </div>
 
                 {/* 4. Status & Priority Accordion */}
-                <div className="border border-[#1A1A1A]">
+                <div className="border border-[#1A1A1A] bg-white shadow-[2px_2px_0px_#1A1A1A] transition-all hover:translate-y-[-1px]">
                   <button
                     type="button"
                     onClick={() => toggleSection('status')}
-                    className="w-full flex items-center justify-between p-3 bg-[#EBEAE6] hover:bg-[#EBEAE6]/80 text-[#1A1A1A] text-[10px] font-bold uppercase tracking-wider select-none cursor-pointer border-b border-[#1A1A1A]"
+                    className="w-full flex items-center justify-between p-4 bg-[#EBEAE6] hover:bg-[#EBEAE6]/80 text-[#1A1A1A] text-[11px] font-bold uppercase tracking-wider select-none cursor-pointer border-b border-[#1A1A1A] transition-colors"
                   >
                     <span className="flex items-center gap-1.5">⚡ Status & Priority</span>
                     <span className="font-mono text-xs">{expandedSections.status ? '▼' : '►'}</span>
@@ -1184,11 +1186,11 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
                 </div>
 
                 {/* 5. Private Notes Accordion */}
-                <div className="border border-[#1A1A1A]">
+                <div className="border border-[#1A1A1A] bg-white shadow-[2px_2px_0px_#1A1A1A] transition-all hover:translate-y-[-1px]">
                   <button
                     type="button"
                     onClick={() => toggleSection('privateNotes')}
-                    className="w-full flex items-center justify-between p-3 bg-[#EBEAE6] hover:bg-[#EBEAE6]/80 text-[#1A1A1A] text-[10px] font-bold uppercase tracking-wider select-none cursor-pointer border-b border-[#1A1A1A]"
+                    className="w-full flex items-center justify-between p-4 bg-[#EBEAE6] hover:bg-[#EBEAE6]/80 text-[#1A1A1A] text-[11px] font-bold uppercase tracking-wider select-none cursor-pointer border-b border-[#1A1A1A] transition-colors"
                   >
                     <span className="flex items-center gap-1.5">🔒 Private Notes</span>
                     <span className="font-mono text-xs">{expandedSections.privateNotes ? '▼' : '►'}</span>
@@ -1219,11 +1221,11 @@ export default function TaskForm({ taskToEdit, existingProjects = [], onSave, on
                 </div>
 
                 {/* 6. Schedule & Reminder Accordion */}
-                <div className="border border-[#1A1A1A]">
+                <div className="border border-[#1A1A1A] bg-white shadow-[2px_2px_0px_#1A1A1A] transition-all hover:translate-y-[-1px]">
                   <button
                     type="button"
                     onClick={() => toggleSection('schedule')}
-                    className="w-full flex items-center justify-between p-3 bg-[#EBEAE6] hover:bg-[#EBEAE6]/80 text-[#1A1A1A] text-[10px] font-bold uppercase tracking-wider select-none cursor-pointer border-b border-[#1A1A1A]"
+                    className="w-full flex items-center justify-between p-4 bg-[#EBEAE6] hover:bg-[#EBEAE6]/80 text-[#1A1A1A] text-[11px] font-bold uppercase tracking-wider select-none cursor-pointer border-b border-[#1A1A1A] transition-colors"
                   >
                     <span className="flex items-center gap-1.5">⏰ Schedule & Reminder</span>
                     <span className="font-mono text-xs">{expandedSections.schedule ? '▼' : '►'}</span>
