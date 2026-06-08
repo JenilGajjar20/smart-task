@@ -75,6 +75,15 @@
         "project": {
           "type": "string",
           "description": "Optional custom project categorization name. Max 100 characters."
+        },
+        "deleted": {
+          "type": "boolean",
+          "description": "True if the task is in the trash."
+        },
+        "deletedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp of task soft deletion/trash placement."
         }
       },
       "required": ["userId", "title", "priority", "category", "completed", "dueDate", "createdAt", "updatedAt"]

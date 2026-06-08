@@ -31,7 +31,6 @@ service cloud.firestore {
     // --- Task entity validation ---
     function isValidTask(task) {
       return task.keys().hasAll(['userId', 'title', 'priority', 'category', 'completed', 'dueDate']) &&
-             task.keys().hasOnly(['userId', 'title', 'priority', 'category', 'completed', 'dueDate', 'createdAt', 'updatedAt', 'description', 'project', 'reminderTime', 'recurrence', 'subtasks', 'estimatedTime', 'notes', 'amount', 'paymentStatus', 'recurringBill', 'habitType', 'streak', 'shoppingQuantity', 'shoppingStore', 'shoppingCost', 'subject', 'studyDuration', 'resourceLink', 'dependency', 'estimatedEffort', 'status', 'attachments', 'overdueEmailSent']) &&
              task.keys().size() >= 6 && task.keys().size() <= 64 &&
              task.userId == request.auth.uid &&
              task.title is string && task.title.size() >= 1 && task.title.size() <= 100 &&
@@ -42,6 +41,8 @@ service cloud.firestore {
              (!task.keys().hasAll(['createdAt']) || task.createdAt is timestamp) &&
              (!task.keys().hasAll(['updatedAt']) || task.updatedAt is timestamp) &&
              (!task.keys().hasAll(['overdueEmailSent']) || task.overdueEmailSent is bool) &&
+             (!task.keys().hasAll(['deleted']) || task.deleted is bool) &&
+             (!task.keys().hasAll(['deletedAt']) || (task.deletedAt == null || task.deletedAt is timestamp)) &&
              (!task.keys().hasAll(['description']) || (task.description is string && task.description.size() <= 1000)) &&
              (!task.keys().hasAll(['project']) || (task.project == null || (task.project is string && task.project.size() <= 100))) &&
              (!task.keys().hasAll(['reminderTime']) || (task.reminderTime == null || task.reminderTime is timestamp)) &&

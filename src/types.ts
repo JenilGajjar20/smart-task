@@ -63,6 +63,8 @@ export interface Task {
   dependency?: string;
   estimatedEffort?: string;
   overdueEmailSent?: boolean;
+  deleted?: boolean;
+  deletedAt?: Timestamp | null;
 }
 
 export enum OperationType {

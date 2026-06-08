@@ -76,10 +76,12 @@ function AttachmentLink({ att }: { att: any }) {
 
 interface TaskListProps {
   tasks: Task[];
-  activeTab: 'all' | 'pending' | 'completed' | 'overdue';
+  activeTab: 'all' | 'pending' | 'completed' | 'overdue' | 'trash';
   onToggleComplete: (task: Task) => Promise<void>;
   onEditTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => Promise<void>;
+  onPermanentDeleteTask?: (taskId: string) => Promise<void>;
+  onRestoreTask?: (task: Task) => Promise<void>;
   searchQuery?: string;
   setSearchQuery?: (val: string) => void;
   isFiltersOpen?: boolean;
@@ -95,6 +97,8 @@ export default function TaskList({
   onToggleComplete, 
   onEditTask, 
   onDeleteTask,
+  onPermanentDeleteTask,
+  onRestoreTask,
   searchQuery,
   setSearchQuery,
   isFiltersOpen = false,
@@ -301,21 +305,30 @@ export default function TaskList({
   const processedTasks = useMemo(() => {
     const now = new Date();
     
-    // 1. Filter by Active Tab
-    let list = tasks.filter(task => {
-      const taskStatus = task.status || (task.completed ? 'Completed' : 'Not Started');
+    // 1. Separate trash tasks and active tasks depending on activeTab
+    let list = tasks;
+    if (activeTab === 'trash') {
+      list = list.filter(task => task.deleted === true);
+    } else {
+      list = list.filter(task => !task.deleted);
+      
+      // Filter by Active Tab
+      const taskStatus = (task: Task) => task.status || (task.completed ? 'Completed' : 'Not Started');
       if (activeTab === 'pending') {
-        return taskStatus === 'Not Started' || taskStatus === 'In Progress' || taskStatus === 'Waiting / Blocked';
+        list = list.filter(t => {
+          const status = taskStatus(t);
+          return status === 'Not Started' || status === 'In Progress' || status === 'Waiting / Blocked';
+        });
+      } else if (activeTab === 'completed') {
+        list = list.filter(t => taskStatus(t) === 'Completed');
+      } else if (activeTab === 'overdue') {
+        list = list.filter(t => {
+          const status = taskStatus(t);
+          const due = t.dueDate.toDate();
+          return status !== 'Completed' && status !== 'Cancelled' && due < now;
+        });
       }
-      if (activeTab === 'completed') {
-        return taskStatus === 'Completed';
-      }
-      if (activeTab === 'overdue') {
-        const due = task.dueDate.toDate();
-        return (taskStatus !== 'Completed' && taskStatus !== 'Cancelled') && due < now;
-      }
-      return true; // 'all'
-    });
+    }
 
     // 2. Local Search filter
     if (search.trim()) {
@@ -460,28 +473,34 @@ export default function TaskList({
         }`}
       >
         {/* Completion Checkbox Button */}
-        <button
-          type="button"
-          onClick={() => onToggleComplete(task)}
-          className="mt-0.5 cursor-pointer select-none focus:outline-none shrink-0"
-        >
-          <div className={`w-4 h-4 border-2 transition-colors flex items-center justify-center ${
-            task.completed 
-              ? 'bg-slate-400 border-slate-400' 
-              : isOverdue 
-              ? 'bg-red-50 border-red-500 hover:bg-red-100' 
-              : 'bg-white border-slate-300 hover:border-slate-400'
-          }`}>
-            {task.completed && (
-              <svg className="w-2.5 h-2.5 text-white stroke-current" fill="none" strokeWidth={4} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>
-            )}
-            {!task.completed && isOverdue && (
-              <div className="w-1.5 h-1.5 bg-red-500" />
-            )}
+        {task.deleted ? (
+          <div className="mt-1.5 shrink-0 opacity-40" title="This task is in the trash bin">
+            <Trash2 className="h-4 w-4 text-slate-500" />
           </div>
-        </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onToggleComplete(task)}
+            className="mt-0.5 cursor-pointer select-none focus:outline-none shrink-0"
+          >
+            <div className={`w-4 h-4 border-2 transition-colors flex items-center justify-center ${
+              task.completed 
+                ? 'bg-slate-400 border-slate-400' 
+                : isOverdue 
+                ? 'bg-red-50 border-red-500 hover:bg-red-100' 
+                : 'bg-white border-slate-300 hover:border-slate-400'
+            }`}>
+              {task.completed && (
+                <svg className="w-2.5 h-2.5 text-white stroke-current" fill="none" strokeWidth={4} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              )}
+              {!task.completed && isOverdue && (
+                <div className="w-1.5 h-1.5 bg-red-500" />
+              )}
+            </div>
+          </button>
+        )}
 
         {/* Clickable Card Body Content */}
         <div 
@@ -583,27 +602,61 @@ export default function TaskList({
             <span className="hidden sm:inline">View Details</span>
           </button>
 
-          {/* Edit Button */}
-          <button
-            type="button"
-            onClick={() => onEditTask(task)}
-            className="p-1.5 text-slate-400 hover:text-slate-700 hover:border-slate-300 border border-transparent transition-colors cursor-pointer"
-            title="Edit task parameters"
-          >
-            <Edit3 className="h-3.5 w-3.5" />
-          </button>
+          {task.deleted ? (
+            <>
+              {/* Restore Button */}
+              <button
+                type="button"
+                onClick={async () => {
+                  if (onRestoreTask) {
+                    await onRestoreTask(task);
+                  }
+                }}
+                className="px-2 py-1.5 text-[10px] md:text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 border border-emerald-250 hover:bg-emerald-50 bg-white transition-colors cursor-pointer flex items-center gap-1"
+                title="Restore task to active list"
+              >
+                <RefreshCw className="h-3 w-3 text-emerald-600" />
+                <span>Restore</span>
+              </button>
 
-          {/* Delete Button */}
-          <button
-            type="button"
-            onClick={() => {
-              setTaskToDelete(task);
-            }}
-            className="p-1.5 text-red-400 hover:text-red-600 hover:border-red-200 border border-transparent transition-colors cursor-pointer"
-            title="Delete task card"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+              {/* Permanent Delete Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setTaskToDelete(task);
+                }}
+                className="px-2 py-1.5 text-[10px] md:text-[11px] font-semibold text-red-600 hover:text-red-800 border border-red-200 hover:bg-red-50 bg-white transition-colors cursor-pointer flex items-center gap-1"
+                title="Delete permanently from Trash"
+              >
+                <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                <span>Delete Permanently</span>
+              </button>
+            </>
+          ) : (
+            <>
+              {/* Edit Button */}
+              <button
+                type="button"
+                onClick={() => onEditTask(task)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:border-slate-300 border border-transparent transition-colors cursor-pointer"
+                title="Edit task parameters"
+              >
+                <Edit3 className="h-3.5 w-3.5" />
+              </button>
+
+              {/* Delete Button */}
+              <button
+                type="button"
+                onClick={async () => {
+                  await onDeleteTask(task.id);
+                }}
+                className="p-1.5 text-red-400 hover:text-red-600 hover:border-red-200 border border-transparent transition-colors cursor-pointer"
+                title="Delete task card"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </>
+          )}
         </div>
       </motion.div>
     );
@@ -1827,26 +1880,57 @@ export default function TaskList({
 
                     {/* Operational Controls Footer in drawer */}
                     <div className="border-t border-[#1A1A1A] pt-4 flex gap-2 font-sans shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const t = selectedTaskForDetail;
-                          setSelectedTaskForDetail(null);
-                          onEditTask(t);
-                        }}
-                        className="flex-1 py-3 text-center bg-transparent hover:bg-slate-100 border border-[#1A1A1A] text-xs font-bold uppercase tracking-wider rounded-none cursor-pointer"
-                      >
-                        Edit Parameters
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setTaskToDelete(selectedTaskForDetail);
-                        }}
-                        className="flex-1 py-3 text-center bg-rose-600 border border-rose-600 hover:bg-rose-700 hover:border-rose-700 text-white text-xs font-bold uppercase tracking-wider rounded-none cursor-pointer"
-                      >
-                        Trash Document
-                      </button>
+                      {selectedTaskForDetail && selectedTaskForDetail.deleted ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const t = selectedTaskForDetail;
+                              setSelectedTaskForDetail(null);
+                              if (onRestoreTask) {
+                                await onRestoreTask(t);
+                              }
+                            }}
+                            className="flex-1 py-3 text-center bg-[#1A1A1A] text-white border border-[#1A1A1A] hover:bg-slate-800 text-xs font-bold uppercase tracking-wider rounded-none cursor-pointer"
+                          >
+                            Restore Card
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTaskToDelete(selectedTaskForDetail);
+                            }}
+                            className="flex-1 py-3 text-center bg-[#C2410C] hover:bg-[#A1330A] border border-[#C2410C] text-white text-xs font-bold uppercase tracking-wider rounded-none cursor-pointer"
+                          >
+                            Delete Permanently
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const t = selectedTaskForDetail;
+                              setSelectedTaskForDetail(null);
+                              onEditTask(t);
+                            }}
+                            className="flex-1 py-3 text-center bg-transparent hover:bg-slate-100 border border-[#1A1A1A] text-xs font-bold uppercase tracking-wider rounded-none cursor-pointer"
+                          >
+                            Edit Parameters
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const t = selectedTaskForDetail;
+                              setSelectedTaskForDetail(null);
+                              await onDeleteTask(t.id);
+                            }}
+                            className="flex-1 py-3 text-center bg-[#C2410C] hover:bg-[#A1330A] text-white border border-[#C2410C] text-xs font-bold uppercase tracking-wider rounded-none cursor-pointer"
+                          >
+                            Trash Document
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -1880,7 +1964,7 @@ export default function TaskList({
                     id="delete-confirmation-title"
                     className="font-serif italic text-xl font-bold uppercase tracking-tight text-[#1A1A1A]"
                   >
-                    Confirm Deletion
+                    {taskToDelete.deleted ? 'Confirm Permanent Purge' : 'Confirm Deletion'}
                   </h3>
                   <p className="text-xs text-slate-500 font-mono mt-1">
                     ID: {taskToDelete.id}
@@ -1890,13 +1974,17 @@ export default function TaskList({
 
               <div className="mb-6 font-sans text-sm text-[#1A1A1A] leading-relaxed">
                 <p>
-                  Are you absolutely certain you want to terminally delete this task:
+                  {taskToDelete.deleted 
+                    ? 'Are you absolutely sure you want to permanently delete this task from Trash? This action cannot be undone:'
+                    : 'Are you absolutely certain you want to move this task to the Trash Bin:'}
                 </p>
                 <div className="my-3 px-3 py-2 border border-slate-300 bg-slate-50 font-serif italic font-semibold text-base text-[#1a1a1a]">
                   "{taskToDelete.title}"
                 </div>
                 <p className="text-xs text-[#C2410C] font-semibold flex items-center gap-1.5 mt-2">
-                  <span>⚠️</span> Warning: This dynamic document record will be permanently purged from the cloud environment.
+                  <span>⚠️</span> {taskToDelete.deleted 
+                    ? 'Warning: This record will be permanently purged from the database.' 
+                    : 'Note: You can review and restore this items from the Trash Bin tab at any time.'}
                 </p>
               </div>
 
@@ -1914,15 +2002,20 @@ export default function TaskList({
                   id="delete-confirm-btn"
                   onClick={async () => {
                     const id = taskToDelete.id;
+                    const isTaskInTrash = taskToDelete.deleted === true;
                     setTaskToDelete(null);
                     if (selectedTaskForDetail && selectedTaskForDetail.id === id) {
                       setSelectedTaskForDetail(null);
                     }
-                    await onDeleteTask(id);
+                    if (isTaskInTrash && onPermanentDeleteTask) {
+                      await onPermanentDeleteTask(id);
+                    } else {
+                      await onDeleteTask(id);
+                    }
                   }}
                   className="px-4 py-2 bg-[#C2410C] hover:bg-[#A1330A] border-2 border-[#1A1A1A]/0 text-white text-xs font-bold uppercase tracking-wider rounded-none cursor-pointer transition-colors"
                 >
-                  Confirm Delete
+                  {taskToDelete.deleted ? 'Confirm Permanent Delete' : 'Move to Trash'}
                 </button>
               </div>
             </motion.div>

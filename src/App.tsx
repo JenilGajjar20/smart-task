@@ -20,7 +20,7 @@ import SupportPage from './components/SupportPage';
 import SettingsPage from './components/SettingsPage';
 import GuidePage from './components/GuidePage';
 import { 
-  CheckSquare, LogOut, Plus, Sparkles, RefreshCw, User as UserIcon, BellRing, Settings, CalendarRange, Clock, AlertCircle, X, BookOpen, Search, SlidersHorizontal
+  CheckSquare, LogOut, Plus, Sparkles, RefreshCw, User as UserIcon, BellRing, Settings, CalendarRange, Clock, AlertCircle, X, BookOpen, Search, SlidersHorizontal, Trash2
 } from 'lucide-react';
 
 const GUEST_TASKS: Task[] = [
@@ -99,7 +99,7 @@ export default function App() {
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
 
   // Active filters and views
-  const [activeTab, setActiveTab ] = useState<'all' | 'pending' | 'completed' | 'overdue'>('all');
+  const [activeTab, setActiveTab ] = useState<'all' | 'pending' | 'completed' | 'overdue' | 'trash'>('all');
   const [currentView, setCurrentView] = useState<'agenda' | 'support' | 'settings' | 'guide' | 'insights'>('agenda');
   const [viewKey, setViewKey] = useState<string>(() => {
     return localStorage.getItem('smarttask_guest_default_task_view') || 
@@ -549,6 +549,8 @@ export default function App() {
             resourceLink: data.resourceLink,
             dependency: data.dependency,
             estimatedEffort: data.estimatedEffort,
+            deleted: data.deleted || false,
+            deletedAt: data.deletedAt || null,
           });
         });
         setTasks(loadedTasks);
@@ -791,7 +793,7 @@ export default function App() {
     }
   };
 
-  // Delete task 
+  // Delete task / Move to Trash (Soft Delete)
   const handleDeleteTask = async (taskId: string) => {
     if (!user) {
       setIsAuthModalOpen(true);
@@ -801,8 +803,50 @@ export default function App() {
     const path = 'tasks';
     try {
       const docRef = doc(db, path, taskId);
+      await updateDoc(docRef, {
+        deleted: true,
+        deletedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      triggerToast('Task moved to Trash Bin.');
+    } catch (error: any) {
+      handleFirestoreError(error, OperationType.UPDATE, path);
+    }
+  };
+
+  // Restore task from Trash Bin
+  const handleRestoreTask = async (task: Task) => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      triggerToast('Authentication Required. Please connect your account.', 'error');
+      return;
+    }
+    const path = 'tasks';
+    try {
+      const docRef = doc(db, path, task.id);
+      await updateDoc(docRef, {
+        deleted: false,
+        deletedAt: null,
+        updatedAt: serverTimestamp()
+      });
+      triggerToast('Task restored successfully.');
+    } catch (error: any) {
+      handleFirestoreError(error, OperationType.UPDATE, path);
+    }
+  };
+
+  // Permanently delete task from cloud
+  const handlePermanentDeleteTask = async (taskId: string) => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      triggerToast('Authentication Required.', 'error');
+      return;
+    }
+    const path = 'tasks';
+    try {
+      const docRef = doc(db, path, taskId);
       await deleteDoc(docRef);
-      triggerToast('Task document permanently deleted.');
+      triggerToast('Task permanently deleted from workspace.');
     } catch (error: any) {
       handleFirestoreError(error, OperationType.DELETE, path);
     }
@@ -1141,12 +1185,27 @@ export default function App() {
                     <span className="text-[10px] uppercase font-bold tracking-wider opacity-50 font-mono">
                       {tasks.filter(t => {
                         const status = t.status || (t.completed ? 'Completed' : 'Not Started');
+                        if (activeTab === 'trash') return t.deleted;
+                        if (t.deleted) return false;
                         if (activeTab === 'pending') return status !== 'Completed';
                         if (activeTab === 'completed') return status === 'Completed';
                         if (activeTab === 'overdue') return status !== 'Completed' && t.dueDate.toDate() < new Date();
                         return true;
                       }).length} items selected
                     </span>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab(activeTab === 'trash' ? 'all' : 'trash')}
+                      className={`px-3 py-1.5 border text-xs font-semibold tracking-tight transition-all cursor-pointer font-sans inline-flex items-center gap-1.5 ${
+                        activeTab === 'trash'
+                          ? 'bg-[#1A1A1A] border-[#1A1A1A] text-white hover:bg-slate-800'
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Trash2 className={`h-3.5 w-3.5 ${activeTab === 'trash' ? 'text-white' : 'text-slate-500'}`} />
+                      <span>Trash Bin ({tasks.filter(t => t.deleted).length})</span>
+                    </button>
                   </div>
                 </div>
 
@@ -1157,6 +1216,8 @@ export default function App() {
                   onToggleComplete={handleToggleComplete}
                   onEditTask={handleEditInit}
                   onDeleteTask={handleDeleteTask}
+                  onPermanentDeleteTask={handlePermanentDeleteTask}
+                  onRestoreTask={handleRestoreTask}
                   searchQuery={searchQueryGlobal}
                   setSearchQuery={setSearchQueryGlobal}
                   isFiltersOpen={isGlobalFilterOpen}

@@ -5,7 +5,7 @@ import { Task, CustomCategory } from '../types';
 
 interface DashboardProps {
   tasks: Task[];
-  onSelectTab: (tab: 'all' | 'pending' | 'completed' | 'overdue') => void;
+  onSelectTab: (tab: 'all' | 'pending' | 'completed' | 'overdue' | 'trash') => void;
   activeTab: string;
   view?: 'summary' | 'insights';
   customCategories?: CustomCategory[];
@@ -24,7 +24,7 @@ export default function Dashboard({
   hasEmailToken = false,
   onEnableEmailAlerts
 }: DashboardProps) {
-  const nonCancelledTasks = useMemo(() => tasks.filter(t => t.status !== 'Cancelled'), [tasks]);
+  const nonCancelledTasks = useMemo(() => tasks.filter(t => t.status !== 'Cancelled' && !t.deleted), [tasks]);
   const total = nonCancelledTasks.length;
   
   const completed = useMemo(() => nonCancelledTasks.filter(t => t.status ? t.status === 'Completed' : t.completed).length, [nonCancelledTasks]);
