@@ -20,7 +20,7 @@ import SupportPage from './components/SupportPage';
 import SettingsPage from './components/SettingsPage';
 import GuidePage from './components/GuidePage';
 import { 
-  CheckSquare, LogOut, Plus, Sparkles, RefreshCw, User as UserIcon, BellRing, Settings, CalendarRange, Clock, AlertCircle, X, BookOpen, Search, SlidersHorizontal, Trash2
+  CheckSquare, LogOut, Plus, Sparkles, RefreshCw, User as UserIcon, BellRing, Settings, CalendarRange, Clock, AlertCircle, X, BookOpen, Search, SlidersHorizontal, Trash2, Download, Smartphone
 } from 'lucide-react';
 
 const GUEST_TASKS: Task[] = [
@@ -134,6 +134,57 @@ export default function App() {
 
   // Custom categories state and persist logic
   const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
+
+  // PWA Install Prompt State and Event Handlers
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallBtn, setShowInstallBtn] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallBtn(true);
+      console.log('[PWA] beforeinstallprompt event captured.');
+    };
+
+    const handleAppInstalled = () => {
+      setShowInstallBtn(false);
+      setDeferredPrompt(null);
+      triggerToast('SmartTask App installed successfully!', 'success');
+      console.log('[PWA] appinstalled event fired.');
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    // Fallback: Check if already in standalone display mode
+    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
+      setShowInstallBtn(false);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstallPWA = async () => {
+    if (!deferredPrompt) {
+      triggerToast('Installation parameters are ready. Search your browser address bar or menu for installation directions.', 'success');
+      return;
+    }
+    try {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`[PWA] Install prompt outcome: ${outcome}`);
+      if (outcome === 'accepted') {
+        setShowInstallBtn(false);
+        setDeferredPrompt(null);
+      }
+    } catch (err) {
+      console.error('[PWA] Failed to prompt installation:', err);
+    }
+  };
 
   useEffect(() => {
     const baseKey = user ? `smarttask_user_${user.uid}` : 'smarttask_guest';
@@ -1003,6 +1054,19 @@ export default function App() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto md:justify-end">
+            {/* PWA Install Button */}
+            {showInstallBtn && (
+              <button
+                type="button"
+                onClick={handleInstallPWA}
+                className="bg-emerald-700 border-2 border-emerald-700 text-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-widest hover:bg-emerald-800 transition-all cursor-pointer flex items-center justify-center gap-1.5 animate-bounce-subtle shadow-xs"
+                title="Install SmartTask directly to your home screen or desktop!"
+              >
+                <Smartphone className="h-3.5 w-3.5 animate-pulse" />
+                <span>Install App</span>
+              </button>
+            )}
+
             {/* Quick Compose / Add Task Action */}
             <button
               onClick={() => {

@@ -1,0 +1,46 @@
+{
+  "name": "SmartTask | Elegant Task Management",
+  "short_name": "SmartTask",
+  "description": "A feature-rich task management application featuring priority categories, progress tracking, customized reminders, and visual status dashboards.",
+  "categories": ["productivity", "utilities"],
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#1A1A1A",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/maskable-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "All Tasks",
+      "short_name": "Tasks",
+      "url": "/?view=agenda",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Focus Spot",
+      "short_name": "Focus",
+      "url": "/?view=focus",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
