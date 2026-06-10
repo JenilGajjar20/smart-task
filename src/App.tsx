@@ -139,6 +139,11 @@ export default function App() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
 
+  // Desktop and sound notifications preferences
+  const [desktopNotifications, setDesktopNotifications] = useState<boolean>(false);
+  const [deskSounds, setDeskSounds] = useState<boolean>(true);
+  const notifiedOverdueIds = useRef<Set<string>>(new Set());
+
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
@@ -348,6 +353,92 @@ export default function App() {
     runOverdueEmailCheck();
   }, [tasks, user, tasksLoaded, hasEmailToken, customCategories]);
 
+  // Periodic checkout loop for native desktop and audio alerts on overdue tasks
+  useEffect(() => {
+    if (!tasksLoaded) return;
+
+    // Seeding on boot so legacy overdue tasks don't sound a loud alarm on page refresh
+    const now = new Date();
+    const overdueOnLoad = tasks.filter(t => !t.completed && t.dueDate && t.dueDate.toDate() < now);
+    
+    if (notifiedOverdueIds.current.size === 0) {
+      overdueOnLoad.forEach(t => notifiedOverdueIds.current.add(t.id));
+    }
+
+    const checkOverdueAlerts = () => {
+      const currentNow = new Date();
+      tasks.forEach((task) => {
+        if (task.completed) return;
+        if (!task.dueDate) return;
+
+        const dueTime = task.dueDate.toDate();
+        if (dueTime < currentNow) {
+          // If already notified in this session, skip
+          if (notifiedOverdueIds.current.has(task.id)) {
+            return;
+          }
+
+          // Mark as notified immediately
+          notifiedOverdueIds.current.add(task.id);
+
+          // 1. Audio Signal Alarm Chime
+          if (deskSounds) {
+            try {
+              const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+              if (AudioCtx) {
+                const ctx = new AudioCtx();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5 chime
+                osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5 chime
+                gain.gain.setValueAtTime(0.12, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.6);
+              }
+            } catch (err) {
+              console.warn('Audio check chimes skipped:', err);
+            }
+          }
+
+          // 2. Native System Banner Notifications
+          if (desktopNotifications && 'Notification' in window && Notification.permission === 'granted') {
+            try {
+              new Notification('Task Overdue Alert', {
+                body: `The task "${task.title}" is officially overdue.`,
+                icon: '/favicon.png',
+                tag: task.id,
+                requireInteraction: true
+              });
+            } catch (err) {
+              console.warn('Direct notification construction failed. Trying PWA service worker...', err);
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(registration => {
+                  registration.showNotification('Task Overdue Alert', {
+                    body: `The task "${task.title}" is officially overdue.`,
+                    icon: '/favicon.png',
+                    tag: task.id
+                  });
+                });
+              }
+            }
+          }
+
+          // 3. Graceful in-app Toast Notification
+          triggerToast(`Assignment Overdue: "${task.title}"`, 'error');
+        }
+      });
+    };
+
+    checkOverdueAlerts();
+    const intervalRef = setInterval(checkOverdueAlerts, 15000); // Sweep every 15 seconds for hot PWA response checks
+
+    return () => clearInterval(intervalRef);
+  }, [tasks, tasksLoaded, desktopNotifications, deskSounds]);
+
   // 1. Listen for auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -360,6 +451,8 @@ export default function App() {
         const baseKey = 'smarttask_guest';
         setTheme(localStorage.getItem(`${baseKey}_theme`) || 'editorial');
         setDarkMode(localStorage.getItem(`${baseKey}_dark_mode`) === 'true');
+        setDesktopNotifications(localStorage.getItem(`${baseKey}_desktop_notifications`) === 'true');
+        setDeskSounds(localStorage.getItem(`${baseKey}_desk_sounds`) !== 'false');
         setProfileNickname('Guest Contributor');
         setProfileRole('Workspace Observer');
         setProfileStation('Public Reading Desk');
@@ -399,6 +492,8 @@ export default function App() {
     const cachedDefaultReminderTime = Number(localStorage.getItem(`${baseKey}_default_reminder_time`)) || 60;
     const cachedLayoutMode = (localStorage.getItem(`${baseKey}_layout_mode`) as 'compact' | 'spacious') || 'spacious';
     const cachedFontSize = (localStorage.getItem(`${baseKey}_font_size`) as 'small' | 'default' | 'large') || 'default';
+    const cachedDesktopNotifications = localStorage.getItem(`${baseKey}_desktop_notifications`) === 'true';
+    const cachedDeskSounds = localStorage.getItem(`${baseKey}_desk_sounds`) !== 'false';
 
     setTheme(cachedTheme);
     setDarkMode(cachedDarkMode);
@@ -411,6 +506,8 @@ export default function App() {
     setDefaultReminderTime(cachedDefaultReminderTime);
     setLayoutMode(cachedLayoutMode);
     setFontSize(cachedFontSize);
+    setDesktopNotifications(cachedDesktopNotifications);
+    setDeskSounds(cachedDeskSounds);
 
     // Read synced settings securely in real-time from Firestore setting doc
     const unsubscribe = onSnapshot(
@@ -463,6 +560,14 @@ export default function App() {
             setFontSize(data.fontSize);
             localStorage.setItem(`${baseKey}_font_size`, data.fontSize);
           }
+          if (data.desktopNotifications !== undefined) {
+            setDesktopNotifications(data.desktopNotifications);
+            localStorage.setItem(`${baseKey}_desktop_notifications`, String(data.desktopNotifications));
+          }
+          if (data.deskSounds !== undefined) {
+            setDeskSounds(data.deskSounds);
+            localStorage.setItem(`${baseKey}_desk_sounds`, String(data.deskSounds));
+          }
         }
       },
       (err) => {
@@ -494,6 +599,8 @@ export default function App() {
       setDefaultReminderTime(Number(localStorage.getItem(`${baseKey}_default_reminder_time`)) || 60);
       setLayoutMode((localStorage.getItem(`${baseKey}_layout_mode`) as 'compact' | 'spacious') || 'spacious');
       setFontSize((localStorage.getItem(`${baseKey}_font_size`) as 'small' | 'default' | 'large') || 'default');
+      setDesktopNotifications(localStorage.getItem(`${baseKey}_desktop_notifications`) === 'true');
+      setDeskSounds(localStorage.getItem(`${baseKey}_desk_sounds`) !== 'false');
     };
     window.addEventListener('smarttask_settings_updated', handleSettingsUpdate);
     return () => window.removeEventListener('smarttask_settings_updated', handleSettingsUpdate);

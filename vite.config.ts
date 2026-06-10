@@ -11,7 +11,7 @@ export default defineConfig(() => {
     if (!fs.existsSync(publicDir)) {
       fs.mkdirSync(publicDir, { recursive: true });
     }
-    const sourceIcon = path.resolve(__dirname, 'src/assets/images/smarttask_app_icon_1781095433372.png');
+    const sourceIcon = path.resolve(__dirname, 'src/assets/images/smarttask_new_logo_1781097236356.png');
     if (fs.existsSync(sourceIcon)) {
       fs.copyFileSync(sourceIcon, path.join(publicDir, 'icon-192.png'));
       fs.copyFileSync(sourceIcon, path.join(publicDir, 'icon-512.png'));

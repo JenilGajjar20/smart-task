@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings, ArrowLeft, RefreshCw, Volume2, ShieldCheck, Database, Trash2, Eye, Sliders, Layout, Folder } from 'lucide-react';
+import { Settings, ArrowLeft, RefreshCw, Volume2, ShieldCheck, Database, Trash2, Eye, Sliders, Layout, Folder, BellRing } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Task, CustomCategory } from '../types';
 import { doc, setDoc } from 'firebase/firestore';
@@ -168,6 +168,10 @@ export default function SettingsPage({
     return localStorage.getItem(`${baseKey}_desk_sounds`) !== 'false';
   });
 
+  const [desktopNotifications, setDesktopNotifications] = useState<boolean>(() => {
+    return localStorage.getItem(`${baseKey}_desktop_notifications`) === 'true';
+  });
+
   // New Personalization parameters
   const [workspaceName, setWorkspaceName] = useState<string>(() => {
     const cached = localStorage.getItem(`${baseKey}_workspace_name`);
@@ -216,6 +220,7 @@ export default function SettingsPage({
       setDefaultPriority(localStorage.getItem(`${uKey}_default_priority`) || 'medium');
       setTimeFormat((localStorage.getItem(`${uKey}_time_format`) as '12h' | '24h') || '24h');
       setDeskSounds(localStorage.getItem(`${uKey}_desk_sounds`) !== 'false');
+      setDesktopNotifications(localStorage.getItem(`${uKey}_desktop_notifications`) === 'true');
       const wsNameVal = localStorage.getItem(`${uKey}_workspace_name`);
       setWorkspaceName(wsNameVal !== null ? wsNameVal : 'SmartTask');
       setWorkspaceAvatar(localStorage.getItem(`${uKey}_workspace_avatar`) || '📝');
@@ -250,6 +255,7 @@ export default function SettingsPage({
     localStorage.setItem(`${baseKey}_default_priority`, defaultPriority);
     localStorage.setItem(`${baseKey}_time_format`, timeFormat);
     localStorage.setItem(`${baseKey}_desk_sounds`, String(deskSounds));
+    localStorage.setItem(`${baseKey}_desktop_notifications`, String(desktopNotifications));
     localStorage.setItem(`${baseKey}_workspace_name`, workspaceName);
     localStorage.setItem(`${baseKey}_workspace_avatar`, workspaceAvatar);
     localStorage.setItem(`${baseKey}_default_task_view`, defaultTaskView);
@@ -279,6 +285,7 @@ export default function SettingsPage({
             defaultPriority,
             timeFormat,
             deskSounds,
+            desktopNotifications,
             workspaceName,
             workspaceAvatar,
             defaultTaskView,
@@ -301,7 +308,7 @@ export default function SettingsPage({
     return () => clearTimeout(handler);
   }, [
     theme, darkMode, profileNickname, profileRole, profileStation,
-    defaultCategory, defaultPriority, timeFormat, deskSounds,
+    defaultCategory, defaultPriority, timeFormat, deskSounds, desktopNotifications,
     workspaceName, workspaceAvatar, defaultTaskView, defaultReminderTime,
     layoutMode, fontSize, baseKey, user
   ]);
@@ -337,6 +344,55 @@ export default function SettingsPage({
       triggerToast('Acoustic signal chimes test completed.');
     } catch (e) {
       triggerToast('System speaker bell could not be initialized.', 'error');
+    }
+  };
+
+  const promptNotificationPermission = async () => {
+    if (!('Notification' in window)) {
+      triggerToast('Desktop Notifications are not supported in this browser.', 'error');
+      return;
+    }
+    
+    const inIframe = window.self !== window.top;
+    
+    try {
+      const currentPerm = Notification.permission;
+      if (currentPerm === 'denied') {
+        triggerToast('Notification permission previously denied. Please unlock notices in your browser settings URL bar.', 'error');
+        return;
+      }
+      
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        setDesktopNotifications(true);
+        triggerToast('Native system notifications authorized successfully!', 'success');
+        
+        try {
+          new Notification('SmartTask PWA Activated', {
+            body: 'You will receive system-level notifications for overdue tasks!',
+            icon: '/favicon.png'
+          });
+        } catch (err) {
+          console.warn('Failed to summon direct Notification constructor, falling back to service worker:', err);
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(registration => {
+              registration.showNotification('SmartTask PWA Activated', {
+                body: 'You will receive system-level notifications for overdue tasks!',
+                icon: '/favicon.png'
+              });
+            });
+          }
+        }
+      } else {
+        setDesktopNotifications(false);
+        triggerToast(`Notification authorization status: ${permission}`, 'error');
+        if (inIframe) {
+          triggerToast('Tip: Open this application in a new tab to bypass platform frame sandbox constraints.', 'success');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to request notification permission:', err);
+      triggerToast('Standard notifications authorization failed.', 'error');
     }
   };
 
@@ -719,6 +775,30 @@ export default function SettingsPage({
                 >
                   <Volume2 className="h-4 w-4" />
                 </button>
+              </div>
+            </div>
+
+            {/* Desktop Notifications and PWA Alerts */}
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 py-2 border-b border-[#1A1A1A]/10" id="desktop-notifications-settings-container font-sans text-left">
+              <div>
+                <span className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wider block">Desktop / PWA Alerts</span>
+                <span className="text-[10px] text-slate-500 font-serif">Trigger instant system-level alerts and desktop banners as soon as any task goes overdue.</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  id="toggle-pwa-alerts-btn"
+                  onClick={promptNotificationPermission}
+                  className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider border border-[#1A1A1A] transition-all cursor-pointer ${
+                    desktopNotifications ? 'bg-[#1A1A1A] text-white font-bold' : 'bg-white text-[#1A1A1A]'
+                  }`}
+                >
+                  {desktopNotifications ? 'Alerts: Activated' : 'Activate System Alerts'}
+                </button>
+                <div 
+                  className={`h-2.5 w-2.5 rounded-full ${desktopNotifications ? 'bg-emerald-600 animate-pulse' : 'bg-slate-300'}`}
+                  title={desktopNotifications ? 'Active: Ready to receive system-level notifications' : 'Disabled'}
+                />
               </div>
             </div>
 
