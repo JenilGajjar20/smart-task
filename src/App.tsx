@@ -357,9 +357,24 @@ export default function App() {
   useEffect(() => {
     if (!tasksLoaded) return;
 
+    const getTaskDate = (val: any): Date | null => {
+      if (!val) return null;
+      if (typeof val.toDate === 'function') return val.toDate();
+      if (val instanceof Date) return val;
+      if (typeof val === 'object' && val.seconds !== undefined) {
+        return new Date(val.seconds * 1000);
+      }
+      const parsed = new Date(val);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    };
+
     // Seeding on boot so legacy overdue tasks don't sound a loud alarm on page refresh
     const now = new Date();
-    const overdueOnLoad = tasks.filter(t => !t.completed && t.dueDate && t.dueDate.toDate() < now);
+    const overdueOnLoad = tasks.filter(t => {
+      if (t.completed || !t.dueDate) return false;
+      const d = getTaskDate(t.dueDate);
+      return d && d < now;
+    });
     
     if (notifiedOverdueIds.current.size === 0) {
       overdueOnLoad.forEach(t => notifiedOverdueIds.current.add(t.id));
@@ -371,7 +386,9 @@ export default function App() {
         if (task.completed) return;
         if (!task.dueDate) return;
 
-        const dueTime = task.dueDate.toDate();
+        const dueTime = getTaskDate(task.dueDate);
+        if (!dueTime) return;
+
         if (dueTime < currentNow) {
           // If already notified in this session, skip
           if (notifiedOverdueIds.current.has(task.id)) {

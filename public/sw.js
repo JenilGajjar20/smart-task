@@ -1,14 +1,14 @@
-const CACHE_NAME = 'smarttask-cache-v1';
+const CACHE_NAME = 'smarttask-cache-v2';
 
 // Assets to cache immediately on SW install
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/manifest.json',
-  '/favicon.png',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/maskable-icon.png'
+  '/manifest.json?v=2',
+  '/favicon.png?v=2',
+  '/icon-192.png?v=2',
+  '/icon-512.png?v=2',
+  '/maskable-icon.png?v=2'
 ];
 
 // Install Event - Pre-cache core assets
