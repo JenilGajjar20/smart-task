@@ -354,6 +354,9 @@ export default function App() {
 
     const runOverdueEmailCheck = async () => {
       const overdueTasks = tasks.filter(t => {
+        // Skip guest/mock tasks during transition or when not owned by current user
+        if (t.id.startsWith('guest_') || t.userId === 'guest' || t.userId !== user.uid) return false;
+
         const isCompleted = t.status ? t.status === 'Completed' : t.completed;
         const isCancelled = t.status === 'Cancelled';
         if (isCompleted || isCancelled) return false;
