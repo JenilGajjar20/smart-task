@@ -21,7 +21,17 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Verification failed. Please try again.');
+      if (err.code === 'auth/popup-closed-by-user' || err.message?.includes('popup-closed-by-user')) {
+        setError(
+          "💡 Google Sign-In was cancelled or closed.\n\n" +
+          "If you were blocked by the \"Access blocked: This app has not completed the Google verification process\" screen:\n\n" +
+          "1. This app is currently in Google OAuth 'Testing' mode.\n" +
+          "2. To sign in with extra test accounts (e.g., shrutigajjar2311@gmail.com), you MUST first add them as authorized 'Test Users' in your Google Cloud Console under APIs & Services > OAuth Consent Screen.\n" +
+          "3. Alternatively, please use your primary developer account to log in."
+        );
+      } else {
+        setError(err.message || 'Verification failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -120,12 +130,12 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
 
           {error && (
             <motion.div
-              className="mt-4 flex gap-3 items-center bg-rose-50 border-2 border-rose-900 text-rose-900 p-4 rounded-none text-xs font-mono"
+              className="mt-4 flex gap-3 items-start bg-rose-50 border-2 border-rose-900 text-rose-900 p-4 rounded-none text-xs font-mono whitespace-pre-line leading-relaxed"
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
             >
-              <AlertCircle className="h-5 w-5 shrink-0 text-rose-800" />
-              <span>{error}</span>
+              <AlertCircle className="h-5 w-5 shrink-0 text-rose-800 mt-0.5" />
+              <span className="flex-1">{error}</span>
             </motion.div>
           )}
 

@@ -11,6 +11,9 @@ export const db = dbId ? getFirestore(app, dbId) : getFirestore(app); /* CRITICA
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope('https://www.googleapis.com/auth/gmail.send');
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
 let cachedAccessToken: string | null = null;
 try {

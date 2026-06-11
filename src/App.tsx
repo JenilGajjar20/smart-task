@@ -20,7 +20,7 @@ import SupportPage from './components/SupportPage';
 import SettingsPage from './components/SettingsPage';
 import GuidePage from './components/GuidePage';
 import { 
-  CheckSquare, LogOut, Plus, Sparkles, RefreshCw, User as UserIcon, BellRing, Settings, CalendarRange, Clock, AlertCircle, X, BookOpen, Search, SlidersHorizontal, Trash2, Download, Smartphone
+  CheckSquare, LogOut, LogIn, Plus, Sparkles, RefreshCw, User as UserIcon, BellRing, Settings, CalendarRange, Clock, AlertCircle, X, BookOpen, Search, SlidersHorizontal, Trash2, Download, Smartphone
 } from 'lucide-react';
 
 const GUEST_TASKS: Task[] = [
@@ -1230,25 +1230,39 @@ export default function App() {
             </div>
           </div>
           
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="text-right hidden sm:block">
-              <div className="text-xs font-semibold text-slate-900">
-                {profileNickname || (user ? user.displayName || 'Workspace Contributor' : 'Guest Contributor')}
-              </div>
-              <p className="text-[9px] text-slate-500 font-mono mt-0.5">{user ? user.email : 'guest-session@smarttask.net'}</p>
-            </div>
-            
-            {user && user.photoURL ? (
-              <img 
-                src={user.photoURL} 
-                alt="Avatar" 
-                referrerPolicy="no-referrer"
-                className="h-7 w-7 rounded-none border border-slate-200"
-              />
+           <div className="flex items-center gap-3 shrink-0">
+            {!user ? (
+              <button
+                type="button"
+                id="header-connect-btn"
+                onClick={() => setIsAuthModalOpen(true)}
+                className="bg-[#C2410C] hover:bg-[#a1350a] text-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer border border-[#C2410C] shadow-xs transition-colors"
+              >
+                <LogIn className="h-3.5 w-3.5" />
+                <span>Login / Connect Account</span>
+              </button>
             ) : (
-              <div className="h-7 w-7 bg-white border border-slate-200 flex items-center justify-center text-[#1A1A1A]">
-                <UserIcon className="h-3.5 w-3.5" />
-              </div>
+              <>
+                <div className="text-right hidden sm:block">
+                  <div className="text-xs font-semibold text-slate-900">
+                    {profileNickname || user.displayName || 'Workspace Contributor'}
+                  </div>
+                  <p className="text-[9px] text-slate-500 font-mono mt-0.5">{user.email}</p>
+                </div>
+                
+                {user.photoURL ? (
+                  <img 
+                    src={user.photoURL} 
+                    alt="Avatar" 
+                    referrerPolicy="no-referrer"
+                    className="h-7 w-7 rounded-none border border-slate-200"
+                  />
+                ) : (
+                  <div className="h-7 w-7 bg-white border border-slate-200 flex items-center justify-center text-[#1A1A1A]">
+                    <UserIcon className="h-3.5 w-3.5" />
+                  </div>
+                )}
+              </>
             )}
           </div>
         </header>
@@ -1293,21 +1307,18 @@ export default function App() {
             )}
 
             {/* Quick Compose / Add Task Action */}
-            <button
-              onClick={() => {
-                if (!user) {
-                  setIsAuthModalOpen(true);
-                  triggerToast('Authentication Required. Please connect your account to compose tasks.', 'error');
-                  return;
-                }
-                setTaskToEdit(null);
-                setIsFormOpen(true);
-              }}
-              className="bg-[#C2410C] text-white px-3.5 py-1.5 text-xs font-semibold tracking-tight hover:bg-[#a1350a] transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>Add Task</span>
-            </button>
+            {user && (
+              <button
+                onClick={() => {
+                  setTaskToEdit(null);
+                  setIsFormOpen(true);
+                }}
+                className="bg-[#C2410C] text-white px-3.5 py-1.5 text-xs font-semibold tracking-tight hover:bg-[#a1350a] transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>Add Task</span>
+              </button>
+            )}
 
             {/* Settings View Route button */}
             <button
@@ -1387,6 +1398,39 @@ export default function App() {
         {/* Main Grid Workspace Area */}
         <main className="flex-1 space-y-8">
           
+          {/* Guest Account Disclaimer Banner */}
+          {currentView === 'agenda' && !user && (
+            <motion.div
+              id="guest-session-disclaimer-banner"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="border border-sky-600 bg-sky-50/60 p-5 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between shadow-xs text-left"
+            >
+              <div className="flex gap-3">
+                <Sparkles className="h-5 w-5 text-sky-700 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-sky-950 font-mono">
+                    ☁ Connect Account to Unlock Full Features
+                  </h4>
+                  <p className="text-[11px] text-sky-900 font-serif leading-relaxed">
+                    You are currently in a <strong>Guest Session</strong>. Your draft tasks are saved only in this browser's temporary storage. Complete your configuration to sync your checklist securely to the cloud database, enabling multi-device access and automated notifications!
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 w-full md:w-auto shrink-0 self-end md:self-center">
+                <button
+                  type="button"
+                  id="guest-banner-auth-btn"
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="bg-sky-800 hover:bg-sky-900 text-white text-[10px] font-bold uppercase tracking-wider px-4 py-2 border border-sky-800 transition-all cursor-pointer w-full md:w-auto text-center flex items-center justify-center gap-1.5 shadow-sm"
+                >
+                  <LogIn className="h-3 w-3" />
+                  <span>Connect Google Account</span>
+                </button>
+              </div>
+            </motion.div>
+          )}
+
           {/* Notification Authorization Banner */}
           {currentView === 'agenda' && showNotificationBanner && (
             <motion.div

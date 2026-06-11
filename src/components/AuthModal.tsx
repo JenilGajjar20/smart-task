@@ -33,7 +33,17 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       onSuccess();
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Authentication assertion was rejected.');
+      if (err.code === 'auth/popup-closed-by-user' || err.message?.includes('popup-closed-by-user')) {
+        setError(
+          "💡 Google Sign-In was cancelled or closed.\n\n" +
+          "If you were blocked by the \"Access blocked: This app has not completed the Google verification process\" screen:\n\n" +
+          "1. This app is currently in Google OAuth 'Testing' mode.\n" +
+          "2. To sign in with extra test accounts (e.g., shrutigajjar2311@gmail.com), you MUST first add them as authorized 'Test Users' in your Google Cloud Console under APIs & Services > OAuth Consent Screen.\n" +
+          "3. Alternatively, please use your primary developer account to log in."
+        );
+      } else {
+        setError(err.message || 'Authentication assertion was rejected.');
+      }
     } finally {
       setLoading(false);
     }
@@ -102,9 +112,9 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
 
             {/* Error state */}
             {error && (
-              <div className="flex gap-2 items-center bg-rose-50 border border-rose-950 p-3 text-[11px] font-mono text-rose-900">
-                <AlertCircle className="h-4 w-4 shrink-0 text-rose-800" />
-                <span>{error}</span>
+              <div className="flex gap-2.5 items-start bg-rose-50 border border-rose-955 p-3.5 text-[11px] font-mono text-rose-900 leading-relaxed whitespace-pre-line">
+                <AlertCircle className="h-4 w-4 shrink-0 text-rose-800 mt-0.5" />
+                <span className="flex-1">{error}</span>
               </div>
             )}
 

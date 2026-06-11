@@ -1099,9 +1099,26 @@ export default function SettingsPage({
             {/* Account Protection Telemetry */}
             <div className="py-2 flex items-center gap-4 bg-white border border-[#1A1A1A]/20 p-4">
               <ShieldCheck className="h-8 w-8 text-[#C2410C] shrink-0" />
-              <div className="text-[11px] font-serif pr-2 text-slate-600 leading-normal space-y-1">
+              <div className="text-[11px] font-serif pr-2 text-slate-600 leading-normal space-y-1 w-full">
                 <span className="font-bold font-sans text-xs text-[#1A1A1A] uppercase tracking-wider block">Security & Access Locks</span>
-                Your workspace is locked with Google Authorized parameters for email address <strong>{user?.email}</strong>. Records are protected from third-party indices.
+                {user ? (
+                  <>
+                    Your workspace is locked with Google Authorized parameters for email address <strong>{user?.email}</strong>. Records are protected from third-party indices.
+                  </>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="font-medium text-amber-800">
+                      Your workspace is currently running in a local <strong>Guest Session</strong>. Connect your Google account to secure your records, sync with database backups, and unlock automated background reminders.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={onRequireAuth}
+                      className="px-3.5 py-1.5 bg-[#C2410C] hover:bg-[#a1350a] text-white font-sans font-bold text-[9px] uppercase tracking-wider cursor-pointer"
+                    >
+                      Connect Google Account
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
