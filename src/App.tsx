@@ -421,25 +421,35 @@ export default function App() {
             }
           }
 
-          // 2. Native System Banner Notifications
+          // 2. Native System Banner Notifications (Prioritize Service Worker for mobile deep-linking focus)
           if (desktopNotifications && 'Notification' in window && Notification.permission === 'granted') {
-            try {
-              new Notification('Task Overdue Alert', {
-                body: `The task "${task.title}" is officially overdue.`,
-                icon: '/favicon.png',
-                tag: task.id,
-                requireInteraction: true
+            const alertTitle = `Overdue: ${task.title}`;
+            const alertOptions = {
+              body: 'Format: SmartTask alert. Deadline has passed, tap to complete!',
+              icon: '/favicon.png?v=4',
+              badge: '/favicon.png?v=4',
+              tag: task.id,
+              requireInteraction: true,
+              silent: !deskSounds,
+              vibrate: [200, 100, 200]
+            };
+
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.ready.then((registration) => {
+                registration.showNotification(alertTitle, alertOptions);
+              }).catch((swErr) => {
+                console.warn('SW notification failed, falling back to window Notification:', swErr);
+                try {
+                  new Notification(alertTitle, alertOptions);
+                } catch (err) {
+                  console.error('Window Notification constructor failed:', err);
+                }
               });
-            } catch (err) {
-              console.warn('Direct notification construction failed. Trying PWA service worker...', err);
-              if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.ready.then(registration => {
-                  registration.showNotification('Task Overdue Alert', {
-                    body: `The task "${task.title}" is officially overdue.`,
-                    icon: '/favicon.png',
-                    tag: task.id
-                  });
-                });
+            } else {
+              try {
+                new Notification(alertTitle, alertOptions);
+              } catch (err) {
+                console.error('Window Notification constructor failed:', err);
               }
             }
           }

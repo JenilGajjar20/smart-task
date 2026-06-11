@@ -1,21 +1,21 @@
-const CACHE_NAME = 'smarttask-cache-v2';
+const CACHE_NAME = 'smarttask-cache-v4';
 
 // Assets to cache immediately on SW install
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/manifest.json?v=2',
-  '/favicon.png?v=2',
-  '/icon-192.png?v=2',
-  '/icon-512.png?v=2',
-  '/maskable-icon.png?v=2'
+  '/manifest.json?v=4',
+  '/favicon.png?v=4',
+  '/icon-192.png?v=4',
+  '/icon-512.png?v=4',
+  '/maskable-icon.png?v=4'
 ];
 
 // Install Event - Pre-cache core assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Pre-caching core offline assets');
+      console.log('[Service Worker] Pre-caching core offline assets (v4)');
       return cache.addAll(ASSETS_TO_CACHE);
     }).then(() => self.skipWaiting())
   );
@@ -34,6 +34,35 @@ self.addEventListener('activate', (event) => {
         })
       );
     }).then(() => self.clients.claim())
+  );
+});
+
+// Skip waiting notification update trigger
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
+// Notification Click Event - Opens the app or focuses it if already open
+self.addEventListener('notificationclick', (event) => {
+  const notification = event.notification;
+  notification.close(); // Close the badge/alert banner
+
+  // Search for open window client of are PWA
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // If a window client is already open, focus it
+      for (const client of clientList) {
+        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // If no window client is open, launch a new visible standalone client
+      if (self.clients.openWindow) {
+        return self.clients.openWindow('/');
+      }
+    })
   );
 });
 
