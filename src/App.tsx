@@ -142,7 +142,98 @@ export default function App() {
   // Desktop and sound notifications preferences
   const [desktopNotifications, setDesktopNotifications] = useState<boolean>(false);
   const [deskSounds, setDeskSounds] = useState<boolean>(true);
+  const [showNotificationBanner, setShowNotificationBanner] = useState<boolean>(false);
   const notifiedOverdueIds = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      const baseKey = user ? `smarttask_user_${user.uid}` : 'smarttask_guest';
+      const dismissed = localStorage.getItem(`${baseKey}_notif_banner_dismissed`) === 'true';
+      const isGranted = Notification.permission === 'granted';
+      // Show banner if notification has not been authorized yet or local option is disabled, and not dismissed
+      if ((!isGranted || !desktopNotifications) && !dismissed) {
+        setShowNotificationBanner(true);
+      } else {
+        setShowNotificationBanner(false);
+      }
+    } else {
+      setShowNotificationBanner(false);
+    }
+  }, [user, desktopNotifications]);
+
+  const requestNotificationPermission = async () => {
+    if (!('Notification' in window)) {
+      triggerToast('Notifications are not supported in this browser.', 'error');
+      return;
+    }
+
+    const inIframe = window.self !== window.top;
+    if (inIframe) {
+      triggerToast('Iframe detected. Please open the app in a new tab first to register notifications.', 'error');
+      return;
+    }
+
+    try {
+      const currentPerm = Notification.permission;
+      if (currentPerm === 'denied') {
+        triggerToast('Notification permission previously denied. Please unlock notices in your browser settings URL bar.', 'error');
+        return;
+      }
+
+      const permission = await Notification.requestPermission();
+      const baseKey = user ? `smarttask_user_${user.uid}` : 'smarttask_guest';
+
+      if (permission === 'granted') {
+        setDesktopNotifications(true);
+        localStorage.setItem(`${baseKey}_desktop_notifications`, 'true');
+        setShowNotificationBanner(false);
+        triggerToast('Native system notifications authorized successfully!', 'success');
+
+        // Firestore sync for settings if user is active
+        if (user && db) {
+          try {
+            const userSettingsDoc = doc(db, 'users', user.uid, 'settings', 'workspace');
+            await updateDoc(userSettingsDoc, { desktopNotifications: true });
+          } catch (fsErr) {
+            console.warn('Could not sync notification settings to Firestore:', fsErr);
+          }
+        }
+
+        // Test alert notification
+        try {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(registration => {
+              registration.showNotification('SmartTask Alerts Active', {
+                body: 'Perfect! You will now receive system-level overdue alerts.',
+                icon: '/favicon.jpg?v=6'
+              });
+            });
+          } else {
+            new Notification('SmartTask Alerts Active', {
+              body: 'Perfect! You will now receive system-level overdue alerts.',
+              icon: '/favicon.jpg?v=6'
+            });
+          }
+        } catch (testErr) {
+          console.warn('Test notification skipped:', testErr);
+        }
+      } else {
+        setDesktopNotifications(false);
+        localStorage.setItem(`${baseKey}_desktop_notifications`, 'false');
+        triggerToast(`Notification authorization status: ${permission}`, 'error');
+      }
+    } catch (err) {
+      console.error('Failed to request notification permission:', err);
+      triggerToast('Standard notifications authorization failed.', 'error');
+    }
+  };
+
+  const dismissNotificationBanner = () => {
+    const baseKey = user ? `smarttask_user_${user.uid}` : 'smarttask_guest';
+    localStorage.setItem(`${baseKey}_notif_banner_dismissed`, 'true');
+    setShowNotificationBanner(false);
+    triggerToast('Notification banner dismissed. You can always configure alerts under Settings.', 'success');
+  };
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -1296,6 +1387,64 @@ export default function App() {
         {/* Main Grid Workspace Area */}
         <main className="flex-1 space-y-8">
           
+          {/* Notification Authorization Banner */}
+          {currentView === 'agenda' && showNotificationBanner && (
+            <motion.div
+              id="notification-request-banner"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="border border-[#1A1A1A] bg-[#F9F8F6] p-5 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between shadow-xs text-left"
+            >
+              <div className="flex gap-3">
+                <BellRing className="h-5 w-5 text-[#C2410C] shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#1A1A1A] font-mono">
+                    🔔 Tap to Enable System Alerts
+                  </h4>
+                  <p className="text-[11px] text-slate-600 font-serif leading-relaxed">
+                    Set up instant mobile alerts and vibration prompts. This ensures you receive system-level notifications for overdue tasks, even when this application is in the background or closed!
+                  </p>
+                  {typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'denied' && (
+                    <p className="text-[10px] text-rose-700 font-semibold font-mono">
+                      ⚠ Notifications are blocked by your browser settings. Please unlock/reset them in your site permissions.
+                    </p>
+                  )}
+                  {typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent) && (
+                    <p className="text-[10px] text-[#C2410C] font-mono font-semibold">
+                      ℹ Note: On iOS/iPhone, you must first install this app to your Home Screen (tap Share &gt; Add to Home Screen) to authorize alerts.
+                    </p>
+                  )}
+                  {window.self !== window.top && (
+                    <p className="text-[10px] text-slate-500 font-mono italic">
+                      ℹ Sandbox warning: Open in a standalone tab first to trigger browser-level prompts.
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 w-full md:w-auto shrink-0 self-end md:self-center">
+                <button
+                  type="button"
+                  id="notif-banner-allow-btn"
+                  onClick={requestNotificationPermission}
+                  disabled={typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'denied'}
+                  className="bg-[#1A1A1A] text-white hover:bg-[#333333] disabled:opacity-40 text-[10px] font-bold uppercase tracking-wider px-3.5 py-1.5 border border-[#1A1A1A] transition-all cursor-pointer w-full md:w-auto text-center"
+                >
+                  Allow Alerts
+                </button>
+                <button
+                  type="button"
+                  id="notif-banner-dismiss-btn"
+                  onClick={dismissNotificationBanner}
+                  className="border border-[#1A1A1A]/20 hover:border-[#1A1A1A] text-[#1A1A1A]/65 hover:text-[#1A1A1A] text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 transition-all cursor-pointer w-full md:w-auto text-center"
+                  title="Dismiss this option"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </motion.div>
+          )}
+
           {/* Alerts for reminders of the day */}
           {currentView === 'agenda' && todayAlarms.length > 0 && (
             <motion.div
