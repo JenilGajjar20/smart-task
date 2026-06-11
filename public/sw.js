@@ -1,21 +1,21 @@
-const CACHE_NAME = 'smarttask-cache-v4';
+const CACHE_NAME = 'smarttask-cache-v6';
 
 // Assets to cache immediately on SW install
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/manifest.json?v=4',
-  '/favicon.png?v=4',
-  '/icon-192.png?v=4',
-  '/icon-512.png?v=4',
-  '/maskable-icon.png?v=4'
+  '/manifest.json?v=6',
+  '/favicon.jpg?v=6',
+  '/icon-192.jpg?v=6',
+  '/icon-512.jpg?v=6',
+  '/maskable-icon.jpg?v=6'
 ];
 
 // Install Event - Pre-cache core assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Pre-caching core offline assets (v4)');
+      console.log('[Service Worker] Pre-caching core offline assets (v6)');
       return cache.addAll(ASSETS_TO_CACHE);
     }).then(() => self.skipWaiting())
   );
@@ -49,18 +49,29 @@ self.addEventListener('notificationclick', (event) => {
   const notification = event.notification;
   notification.close(); // Close the badge/alert banner
 
-  // Search for open window client of are PWA
+  // Get deep-link absolute URL inside PWA scope
+  const targetUrl = new URL('/', self.location.origin).href;
+
+  // Search for open window client of the PWA
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // If a window client is already open, focus it
+      // 1. If a window client is already open, focus it
       for (const client of clientList) {
-        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
-          return client.focus();
+        if (client.url && client.url.startsWith(self.location.origin)) {
+          if ('focus' in client) {
+            return client.focus().then((focusedClient) => {
+              // Post message to client so they can force-refresh or trigger UI action if needed
+              if (focusedClient && 'postMessage' in focusedClient) {
+                focusedClient.postMessage({ type: 'NOTIFICATION_CLICKED', taskId: notification.tag });
+              }
+              return focusedClient;
+            });
+          }
         }
       }
-      // If no window client is open, launch a new visible standalone client
+      // 2. If no window client is open, launch a new standalone client window
       if (self.clients.openWindow) {
-        return self.clients.openWindow('/');
+        return self.clients.openWindow(targetUrl);
       }
     })
   );

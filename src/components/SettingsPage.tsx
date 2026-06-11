@@ -370,7 +370,7 @@ export default function SettingsPage({
         try {
           new Notification('SmartTask PWA Activated', {
             body: 'You will receive system-level notifications for overdue tasks!',
-            icon: '/favicon.png'
+            icon: '/favicon.jpg?v=6'
           });
         } catch (err) {
           console.warn('Failed to summon direct Notification constructor, falling back to service worker:', err);
@@ -378,7 +378,7 @@ export default function SettingsPage({
             navigator.serviceWorker.ready.then(registration => {
               registration.showNotification('SmartTask PWA Activated', {
                 body: 'You will receive system-level notifications for overdue tasks!',
-                icon: '/favicon.png'
+                icon: '/favicon.jpg?v=6'
               });
             });
           }

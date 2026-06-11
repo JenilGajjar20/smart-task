@@ -423,11 +423,11 @@ export default function App() {
 
           // 2. Native System Banner Notifications (Prioritize Service Worker for mobile deep-linking focus)
           if (desktopNotifications && 'Notification' in window && Notification.permission === 'granted') {
-            const alertTitle = `Overdue: ${task.title}`;
+            const alertTitle = `Overdue Task Alert`;
             const alertOptions = {
-              body: 'Format: SmartTask alert. Deadline has passed, tap to complete!',
-              icon: '/favicon.png?v=4',
-              badge: '/favicon.png?v=4',
+              body: `"${task.title}" is officially past its due date. Tap to open and complete it!`,
+              icon: '/favicon.jpg?v=6',
+              badge: '/favicon.jpg?v=6',
               tag: task.id,
               requireInteraction: true,
               silent: !deskSounds,
